@@ -1,88 +1,43 @@
-import {
-  type MutationOptions,
-  type QueryClient,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 
-import {
-  CreateTaskListParams,
-  DeleteTaskListParams,
-  ResponseCreateTaskList,
-  ResponseUpdateTaskListName,
-  UpdateTaskListNameParams,
-} from '@/apis/taskList/type';
 import {
   createTaskListAction,
   deleteTaskListAction,
-  getTaskListsAction,
   updateTaskListNameAction,
-} from '@/app/(protected)/[teamId]/tasklist/_action/taskList';
-import { teamKeys } from '@/queries/teams/queryKeys';
+} from '@/actions/taskList.action';
+import { queryKeys } from '@/queries/queryKeys';
+import { useActionMutation } from '@/queries/useActionMutation';
 
-import { groupKeys } from '../group/queryKey';
-import { taskListKeys } from './queryKey';
-
-const invalidateTaskListOverviewQueries = (queryClient: QueryClient, groupId: number) => {
-  return Promise.all([
-    queryClient.invalidateQueries({
-      queryKey: taskListKeys.all({ groupId }),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: teamKeys.group({ groupId }),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: groupKeys.all(),
-    }),
+/** 목록이 바뀌면 그 목록을 포함하는 그룹 상세와 팀 페이지를 갱신한다. */
+const invalidateTaskListOwners = (queryClient: QueryClient, groupId: number) =>
+  Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.group.detail(groupId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.teamPage.group(groupId) }),
   ]);
-};
 
-export const useGetTaskLists = ({ groupId }: { groupId: number }) => {
-  return useQuery({
-    queryKey: taskListKeys.all({ groupId }),
-    queryFn: async () => getTaskListsAction({ groupId }),
+export const useCreateTaskListMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useActionMutation(createTaskListAction, {
+    onSuccess: (_data, { groupId }) => invalidateTaskListOwners(queryClient, groupId),
+    meta: { errorMessage: '할 일 목록을 생성하지 못했습니다.' },
   });
 };
 
-export const useCreateTaskList = (
-  mutationOptions?: MutationOptions<ResponseCreateTaskList, Error, CreateTaskListParams>,
-) => {
+export const useUpdateTaskListMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation<ResponseCreateTaskList, Error, CreateTaskListParams>({
-    ...mutationOptions,
-    mutationFn: createTaskListAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListOverviewQueries(queryClient, variables.groupId);
-    },
+
+  return useActionMutation(updateTaskListNameAction, {
+    onSuccess: (_data, { groupId }) => invalidateTaskListOwners(queryClient, groupId),
+    meta: { errorMessage: '할 일 목록 이름을 수정하지 못했습니다.' },
   });
 };
 
-export const useUpdateTaskList = (
-  mutationOptions?: MutationOptions<ResponseUpdateTaskListName, Error, UpdateTaskListNameParams>,
-) => {
+export const useDeleteTaskListMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation<ResponseUpdateTaskListName, Error, UpdateTaskListNameParams>({
-    ...mutationOptions,
-    mutationFn: updateTaskListNameAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListOverviewQueries(queryClient, variables.groupId);
-    },
-  });
-};
 
-export const useDeleteTaskList = (
-  mutationOptions?: MutationOptions<void, Error, DeleteTaskListParams>,
-) => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, DeleteTaskListParams>({
-    ...mutationOptions,
-    mutationFn: deleteTaskListAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListOverviewQueries(queryClient, variables.groupId);
-    },
+  return useActionMutation(deleteTaskListAction, {
+    onSuccess: (_data, { groupId }) => invalidateTaskListOwners(queryClient, groupId),
+    meta: { errorMessage: '할 일 목록을 삭제하지 못했습니다.' },
   });
 };
