@@ -1,33 +1,18 @@
+import type { UserSummary } from '@/apis/user/type';
+
 export type FrequencyType = 'ONCE' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
-export interface TaskPathParams {
+export interface TaskListPathParams {
   groupId: number;
   taskListId: number;
 }
 
-export interface TaskDetailPathParams extends TaskPathParams {
+export interface TaskDetailPathParams extends TaskListPathParams {
   taskId: number;
 }
 
-export interface UpdateTaskOrderPathParams extends TaskPathParams {
-  id: number;
-}
-
-export interface DeleteRecurringTaskPathParams extends TaskDetailPathParams {
-  recurringId: number;
-}
-
-export interface GetTasksRequest extends TaskPathParams {
+export interface GetTasksRequest extends TaskListPathParams {
   date?: string;
-}
-
-export interface CreateTaskRequest extends TaskPathParams {
-  name: string;
-  description: string;
-  startDate: string;
-  frequencyType: FrequencyType;
-  monthDay?: number;
-  weekDays?: number[];
 }
 
 export interface UpdateTaskRequest extends TaskDetailPathParams {
@@ -36,23 +21,9 @@ export interface UpdateTaskRequest extends TaskDetailPathParams {
   done?: boolean;
 }
 
-export interface UpdateTaskOrderRequest extends UpdateTaskOrderPathParams {
-  displayIndex: number;
-}
-
-export interface TaskUser {
-  image: string | null;
-  nickname: string;
-  id: number;
-}
-
-export interface TaskDoneBy {
-  user: TaskUser | null;
-}
-
 export interface Task {
-  doneBy: TaskDoneBy | null;
-  writer: TaskUser | null;
+  doneBy: { user: UserSummary | null } | null;
+  writer: UserSummary | null;
   displayIndex: number;
   commentCount: number;
   deletedAt: string | null;
@@ -65,23 +36,4 @@ export interface Task {
   description: string | null;
   name: string;
   id: number;
-}
-
-export interface RecurringTask {
-  writerId: number;
-  groupId: number;
-  taskListId: number;
-  monthDay: number;
-  weekdays: number[];
-  frequencyType: FrequencyType;
-  updatedAt: string;
-  createdAt: string;
-  description: string;
-  name: string;
-  id: number;
-  startDate: string;
-}
-
-export interface CreateTaskResponse {
-  recurring: RecurringTask;
 }

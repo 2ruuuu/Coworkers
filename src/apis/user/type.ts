@@ -1,3 +1,18 @@
+import type { FrequencyType } from '@/apis/task/type';
+
+export interface UserSummary {
+  id: number;
+  nickname: string;
+  image: string | null;
+}
+
+export interface User extends UserSummary {
+  teamId: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Group {
   id: number;
   teamId: string;
@@ -7,32 +22,25 @@ export interface Group {
   updatedAt: string;
 }
 
-export type MembershipRole = 'ADMIN' | 'MEMBER';
+export type MemberRole = 'ADMIN' | 'MEMBER';
 
-export interface Membership {
+/** 그룹 멤버 (GET /groups/:id 의 members) */
+export interface Member {
   userId: number;
   groupId: number;
-
-  role: MembershipRole;
-
   userName: string;
   userEmail: string;
   userImage: string | null;
+  role: MemberRole;
+}
 
+/** 내 멤버십 (GET /user 의 memberships) */
+export interface Membership extends Member {
   group: Group;
 }
 
-export interface Profile {
-  id: number;
-  teamId: string;
-
-  email: string;
-  nickname: string;
-  image: string | null;
-
-  createdAt: string;
-  updatedAt: string;
-
+/** GET /user 응답 */
+export interface Profile extends User {
   memberships: Membership[];
 }
 
@@ -41,24 +49,23 @@ export interface UpdateProfileRequest {
   image?: string | null;
 }
 
-export type TaskFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-
 export interface TaskHistory {
   id: number;
   recurringId: number;
-
   writerId: number;
   userId: number;
-
   displayIndex: number;
-
   name: string;
   description: string;
-  frequency: TaskFrequency;
+  frequency: FrequencyType;
   date: string;
   doneAt: string;
   deletedAt: string | null;
   updatedAt: string;
+}
+
+export interface TaskHistoryResponse {
+  tasksDone: TaskHistory[];
 }
 
 export interface SendPasswordResetEmailRequest {

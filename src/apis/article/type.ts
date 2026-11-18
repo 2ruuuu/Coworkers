@@ -20,8 +20,6 @@ export type ArticleDetail = Article & {
   isLiked: boolean;
 };
 
-// 클라이언트에서 서버
-
 export type ArticleOrder = 'recent' | 'like';
 
 export type GetArticlesParams = {
@@ -31,17 +29,13 @@ export type GetArticlesParams = {
   keyword?: string;
 };
 
-export type ArticleForm = {
+/** 게시글 작성/수정 요청 본문 */
+export type ArticleRequest = {
   title: string;
   content: string;
   image?: string | null;
 };
 
-export type CreateArticleRequest = ArticleForm;
-
-export type UpdateArticleRequest = ArticleForm;
-
-// 서버에서 클라이언트
 export type GetArticlesResponse = {
   totalCount: number;
   list: Article[];

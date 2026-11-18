@@ -1,69 +1,31 @@
 import type { Task } from '@/apis/task/type';
 
-export interface ResponseGetTaskLists {
-  displayIndex: number;
-  groupId: number;
-  updatedAt: string;
-  createdAt: string;
-  name: string;
+/** 할 일 목록 (생성/수정 응답에는 tasks가 없다) */
+export interface TaskListSummary {
   id: number;
+  name: string;
+  groupId: number;
+  displayIndex: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskList extends TaskListSummary {
   tasks: Task[];
-}
-
-export interface RequestCreateTaskList {
-  name: string;
-}
-
-export interface ResponseCreateTaskList {
-  displayIndex: number;
-  groupId: number;
-  updatedAt: string;
-  createdAt: string;
-  name: string;
-  id: number;
-}
-
-export interface RequestUpdateTaskListName {
-  name?: string;
-}
-
-export interface ResponseUpdateTaskListName {
-  displayIndex: number;
-  groupId: number;
-  updatedAt: string;
-  createdAt: string;
-  name: string;
-  id: number;
-}
-
-export interface RequestUpdateTaskListOrder {
-  displayIndex: number;
-}
-
-export interface GetTaskListsParams {
-  groupId: number;
-  id: string;
-  date?: string;
 }
 
 export interface CreateTaskListParams {
   groupId: number;
-  body: RequestCreateTaskList;
+  name: string;
 }
 
 export interface UpdateTaskListNameParams {
   groupId: number;
-  id: string;
-  body: RequestUpdateTaskListName;
-}
-
-export interface UpdateTaskListOrderParams {
-  groupId: number;
-  id: string;
-  body: RequestUpdateTaskListOrder;
+  taskListId: number;
+  name: string;
 }
 
 export interface DeleteTaskListParams {
   groupId: number;
-  id: string;
+  taskListId: number;
 }

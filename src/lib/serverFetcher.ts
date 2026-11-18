@@ -1,6 +1,8 @@
 import 'server-only';
 
-import { refreshAccessToken } from '@/apis/auth/server';
+import { refreshAccessToken } from '@/apis/auth/refresh';
+import { createApiUrl } from '@/lib/apiUrl';
+import { ApiError } from '@/lib/error';
 import {
   clearAuthTokens,
   getAccessToken,
@@ -8,30 +10,16 @@ import {
   setAccessToken,
 } from '@/utils/auth/token';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-const createRequestUrl = (path: string) => {
-  if (path.startsWith('http')) {
-    return path;
-  }
-
-  if (!API_BASE_URL) {
-    throw new Error('NEXT_PUBLIC_API_BASE_URL is not defined');
-  }
-
-  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-  const requestPath = path.startsWith('/') ? path : `/${path}`;
-
-  return `${baseUrl}${requestPath}`;
-};
-
 const isFormDataBody = (body: RequestInit['body']) => {
   return typeof FormData !== 'undefined' && body instanceof FormData;
 };
 
-const createServerHeaders = async (optionsHeaders?: HeadersInit, body?: RequestInit['body']) => {
+const createServerHeaders = (
+  optionsHeaders: HeadersInit | undefined,
+  body: RequestInit['body'],
+  accessToken: string | null,
+) => {
   const headers = new Headers(optionsHeaders);
-  const accessToken = await getAccessToken();
 
   if (accessToken && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${accessToken}`);
@@ -44,64 +32,79 @@ const createServerHeaders = async (optionsHeaders?: HeadersInit, body?: RequestI
   return headers;
 };
 
+/**
+ * 응답 본문을 파싱한다.
+ * 204는 undefined, JSON은 객체, 그 외(예: 초대 링크 문자열)는 텍스트로 반환한다.
+ * 백엔드 응답은 런타임 검증 없이 호출부가 지정한 타입 T로 취급한다.
+ */
 const parseResponse = async <T>(response: Response): Promise<T> => {
   if (response.status === 204) {
     return undefined as T;
   }
 
   const contentType = response.headers.get('Content-Type');
+  const data: unknown = contentType?.includes('application/json')
+    ? await response.json()
+    : await response.text();
 
-  if (contentType?.includes('application/json')) {
-    return response.json() as Promise<T>;
-  }
-
-  return response.text() as Promise<T>;
+  return data as T;
 };
 
-const refreshSession = async (): Promise<boolean> => {
+/**
+ * 서버 컴포넌트 렌더 중에는 쿠키를 수정할 수 없으므로(Next.js 제약),
+ * 쿠키 쓰기 실패는 무시한다. 쿠키 갱신은 proxy.ts가 담당한다.
+ */
+const ignoreCookieWriteError = async (write: () => Promise<void>) => {
+  try {
+    await write();
+  } catch {
+    // RSC 렌더 중에는 cookies().set/delete가 예외를 던진다.
+  }
+};
+
+const refreshSession = async (): Promise<string | null> => {
   const refreshToken = await getRefreshToken();
 
   if (!refreshToken) {
-    return false;
+    return null;
   }
 
   try {
-    const { accessToken } = await refreshAccessToken({
-      refreshToken,
-    });
-
-    await setAccessToken(accessToken);
-
-    return true;
+    const { accessToken } = await refreshAccessToken({ refreshToken });
+    await ignoreCookieWriteError(() => setAccessToken(accessToken));
+    return accessToken;
   } catch {
-    await clearAuthTokens();
-    return false;
+    await ignoreCookieWriteError(clearAuthTokens);
+    return null;
   }
 };
 
-export const serverFetcher = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
-  let response = await fetch(createRequestUrl(path), {
+const request = (path: string, options: RequestInit, accessToken: string | null) => {
+  return fetch(createApiUrl(path), {
     ...options,
-    headers: await createServerHeaders(options.headers, options.body),
+    headers: createServerHeaders(options.headers, options.body, accessToken),
     cache: options.cache ?? 'no-store',
   });
+};
+
+/**
+ * 인증 쿠키를 붙여 백엔드 API를 호출한다. (서버 전용)
+ * - 401이면 refresh 토큰으로 한 번 갱신 후 재시도한다.
+ * - 실패 응답은 status를 가진 ApiError로 던진다.
+ */
+export const serverFetcher = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
+  let response = await request(path, options, await getAccessToken());
 
   if (response.status === 401) {
-    const refreshed = await refreshSession();
+    const refreshedAccessToken = await refreshSession();
 
-    if (refreshed) {
-      response = await fetch(createRequestUrl(path), {
-        ...options,
-        headers: await createServerHeaders(options.headers, options.body),
-        cache: options.cache ?? 'no-store',
-      });
+    if (refreshedAccessToken) {
+      response = await request(path, options, refreshedAccessToken);
     }
   }
 
   if (!response.ok) {
-    const errorBody = await response.text();
-
-    throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+    throw new ApiError(response.status, await response.text());
   }
 
   return parseResponse<T>(response);
