@@ -11,7 +11,6 @@ const DISALLOW_PATHS = [
   '/addteam',
   '/jointeam',
   '/*/tasklist',
-  '/*/edit',
   '/*/editteam',
 ];
 

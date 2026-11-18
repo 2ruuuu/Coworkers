@@ -10,10 +10,9 @@ import type { AccountSettingsFormValues } from '@/schemas/auth.schema';
 
 type ProfileUpdateFormProps = {
   email: string;
-  onImageFileSelect: (file: File) => void;
 };
 
-const ProfileUpdateForm = ({ email, onImageFileSelect }: ProfileUpdateFormProps) => {
+const ProfileUpdateForm = ({ email }: ProfileUpdateFormProps) => {
   const {
     register,
     setValue,
@@ -37,7 +36,7 @@ const ProfileUpdateForm = ({ email, onImageFileSelect }: ProfileUpdateFormProps)
   const handleProfileImageChange = (file: File) => {
     const previewUrl = URL.createObjectURL(file);
 
-    onImageFileSelect(file);
+    setValue('imageFile', file);
     setValue('image', previewUrl, {
       shouldDirty: true,
       shouldValidate: true,

@@ -1,6 +1,6 @@
 'use client';
 
-import SecessionIcon from '@/assets/icons/secession.svg';
+import SecessionIcon from '@/assets/icons/secession.svg?react';
 import Modal from '@/components/modal/Modal';
 
 import { useDeleteAccount } from '../_hooks/useDeleteAccount';

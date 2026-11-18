@@ -21,7 +21,8 @@ const TABLET_SIZES = '(min-width: 768px) 80vw';
 const MOBILE_SIZES = '100vw';
 
 const DEFAULT_QUALITY = 90;
-const PRIORITY_QUALITY = 100;
+// LCP 이미지는 용량이 작아야 빨리 그려지므로 품질을 과하게 올리지 않는다.
+const PRIORITY_QUALITY = 85;
 
 const ResponsiveLandingImage = ({
   alt,
@@ -97,6 +98,7 @@ const ResponsiveLandingImage = ({
         <source media={TABLET_MEDIA} srcSet={tabletSrcSet} />
         <img
           {...mobileProps}
+          alt={alt}
           className={cn('h-auto w-full', imageClassName)}
           {...(priority && { fetchPriority: 'high', loading: 'eager' })}
         />
