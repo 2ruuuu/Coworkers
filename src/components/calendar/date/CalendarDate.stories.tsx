@@ -1,30 +1,31 @@
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import CalendarDate from './CalendarDate';
+
+// 상태 변화 검증을 위해 상태를 가진 컴포넌트로 감싼다. (render 함수 안에서 훅을 직접 쓰지 않음)
+const StatefulCalendarDate = (args: ComponentProps<typeof CalendarDate>) => {
+  const [selectedDate, setSelectedDate] = useState(args.selectedDate);
+
+  return (
+    <CalendarDate
+      {...args}
+      selectedDate={selectedDate}
+      setSelectedDate={(date) => {
+        setSelectedDate(date);
+        args.setSelectedDate(date);
+      }}
+    />
+  );
+};
 
 const meta = {
   component: CalendarDate,
   title: 'Components/CalendarDate',
   tags: ['autodocs'],
-
-  // 상태 변화 검증을 위해 render 함수 안에서 state 사용
-  render: (args) => {
-    const [selectedDate, setSelectedDate] = useState(args.selectedDate);
-
-    return (
-      <CalendarDate
-        {...args}
-        selectedDate={selectedDate}
-        setSelectedDate={(date) => {
-          setSelectedDate(date);
-          args.setSelectedDate(date);
-        }}
-      />
-    );
-  },
+  render: (args) => <StatefulCalendarDate {...args} />,
 } satisfies Meta<typeof CalendarDate>;
 export default meta;
 

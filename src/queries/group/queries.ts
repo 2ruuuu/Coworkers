@@ -1,19 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 
-import { getGroupAction, getGroupsAction } from '@/app/(protected)/[teamId]/tasklist/_action/group';
+import { ENDPOINTS } from '@/apis/endpoints';
+import type { GroupDetail } from '@/apis/group/type';
+import { bffGet } from '@/lib/bffFetcher';
+import { queryKeys } from '@/queries/queryKeys';
 
-import { groupKeys } from './queryKey';
-
-export const useGetGroup = ({ groupId }: { groupId: number }) => {
-  return useQuery({
-    queryKey: groupKeys.detail({ groupId }),
-    queryFn: () => getGroupAction({ groupId }),
-  });
-};
-
-export const useGetGroups = () => {
-  return useQuery({
-    queryKey: groupKeys.all(),
-    queryFn: () => getGroupsAction(),
-  });
+export const groupQueries = {
+  detail: (groupId: number) =>
+    queryOptions({
+      queryKey: queryKeys.group.detail(groupId),
+      queryFn: () => bffGet<GroupDetail>(ENDPOINTS.group.detail(groupId)),
+    }),
 };

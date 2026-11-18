@@ -11,12 +11,10 @@ import {
   getAccessToken,
   getAuthTokens,
   getRefreshToken,
-  hasAuthTokens,
+  hasAuthSession,
   setAccessToken,
   setAuthTokens,
 } from './token';
-
-vi.mock('server-only', () => ({}));
 
 const cookieState = new Map<string, string>();
 const cookieOptionState = new Map<string, unknown>();
@@ -78,13 +76,25 @@ describe('authentication token management', () => {
     });
   });
 
-  it('hasAuthTokens는 access 토큰과 refresh 토큰이 모두 있을 때만 true를 반환한다', async () => {
+  it('hasAuthSession은 refresh 토큰이 있으면 access 토큰이 만료되어도 true를 반환한다', async () => {
     await setAccessToken('only-access');
-
-    expect(await hasAuthTokens()).toBe(false);
+    expect(await hasAuthSession()).toBe(false);
 
     await setAuthTokens({ accessToken: 'access', refreshToken: 'refresh' });
-    expect(await hasAuthTokens()).toBe(true);
+    cookieState.delete(ACCESS_TOKEN_KEY);
+    expect(await hasAuthSession()).toBe(true);
+  });
+
+  it('JWT 토큰이면 exp에 맞춰 쿠키 maxAge를 설정한다', async () => {
+    const exp = Math.floor(Date.now() / 1000) + 600;
+    const payload = btoa(JSON.stringify({ exp })).replace(/=+$/, '');
+    const jwt = `header.${payload}.signature`;
+
+    await setAccessToken(jwt);
+
+    const options = cookieOptionState.get(ACCESS_TOKEN_KEY) as { maxAge: number };
+    expect(options.maxAge).toBeGreaterThan(590);
+    expect(options.maxAge).toBeLessThanOrEqual(600);
   });
 
   it('clearAuthTokens는 access 토큰과 refresh 토큰을 모두 삭제한다', async () => {

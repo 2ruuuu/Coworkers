@@ -1,9 +1,8 @@
-import { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 
-import Image from 'next/image';
+import type Image from 'next/image';
 
 export type ProfileSize = 'lg' | 'md' | 'sm';
-export type ProfileElement = HTMLImageElement | HTMLSpanElement;
 
 export interface ProfileProps extends Omit<
   ComponentPropsWithoutRef<typeof Image>,

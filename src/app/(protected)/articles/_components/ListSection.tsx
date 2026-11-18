@@ -1,35 +1,46 @@
 'use client';
 
-import ArticleCard from '@/app/(protected)/articles/_components/Card';
-import type { ArticleWithLike } from '@/app/(protected)/articles/_components/Card.type';
-import DropdownMd from '@/components/dropdown/DropdownMd';
+import type { Article, ArticleOrder } from '@/apis/article/type';
+import DropdownSelect from '@/components/dropdown/DropdownSelect';
 
-const SORT_OPTIONS = ['최신순', '좋아요 많은순'];
+import { ARTICLE_ORDER_OPTIONS } from '../_constants/article';
+import ArticleCard from './Card';
 
 interface ListSectionProps {
-  articles: ArticleWithLike[];
-  onSortChange: (value: 'recent' | 'like') => void;
-  sortType: 'recent' | 'like';
+  articles: Article[];
+  orderBy: ArticleOrder;
+  onOrderChange: (value: ArticleOrder) => void;
+  emptyMessage: string;
 }
 
-const ListSection = ({ articles, onSortChange, sortType }: ListSectionProps) => {
+const ListSection = ({ articles, orderBy, onOrderChange, emptyMessage }: ListSectionProps) => {
   return (
-    <div className="flex flex-col gap-5 p-7 xl:p-0">
+    <section aria-labelledby="all-articles-title" className="flex flex-col gap-5 p-7 xl:p-0">
       <div className="flex flex-row justify-between">
-        <h1 className="text-text-primary text-2xl font-semibold">전체 게시글</h1>
-        <DropdownMd
-          options={SORT_OPTIONS}
-          onSelect={(value) => onSortChange(value === '최신순' ? 'recent' : 'like')}
-        >
-          <div>{sortType === 'recent' ? '최신순' : '좋아요 많은순'}</div>
-        </DropdownMd>
+        <h2 id="all-articles-title" className="text-text-primary text-2xl font-semibold">
+          전체 게시글
+        </h2>
+        <DropdownSelect
+          label="정렬 기준"
+          options={ARTICLE_ORDER_OPTIONS}
+          value={orderBy}
+          onChange={onOrderChange}
+        />
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        {articles.map((article) => (
-          <ArticleCard key={article.id} article={article} variant="normal" />
-        ))}
-      </div>
-    </div>
+      {articles.length === 0 ? (
+        <p className="text-text-default flex min-h-40 items-center justify-center text-center">
+          {emptyMessage}
+        </p>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {articles.map((article) => (
+            <li key={article.id}>
+              <ArticleCard article={article} variant="normal" />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 };
 

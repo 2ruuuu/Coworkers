@@ -44,39 +44,42 @@ const CalendarControl = ({
       <Button
         variant="secondary-filled"
         onClick={handleToday}
-        aria-label="오늘"
-        className="px-1 py-1 text-[8px] md:px-3 md:text-xs"
+        className="px-2 py-1 text-xs md:px-3"
       >
         오늘
       </Button>
       <button
         type="button"
-        aria-label="이전"
+        aria-label="이전 주"
         onClick={handlePrev}
-        className="flex items-center justify-center rounded-full border border-slate-200"
+        className="border-border-primary flex items-center justify-center rounded-full border"
       >
-        <PrevIcon width={12} height={12} viewBox="0 0 24 24" />
+        <PrevIcon width={12} height={12} viewBox="0 0 24 24" aria-hidden="true" />
       </button>
-      <div className="text-text-primary flex items-center text-sm font-medium md:text-lg">
+      <p
+        className="text-text-primary flex items-center text-sm font-medium md:text-lg"
+        aria-live="polite"
+      >
         {displayDate}
-      </div>
+      </p>
       <button
         type="button"
-        aria-label="다음"
+        aria-label="다음 주"
         onClick={handleNext}
-        className="flex items-center justify-center rounded-full border border-slate-200"
+        className="border-border-primary flex items-center justify-center rounded-full border"
       >
-        <NextIcon width={12} height={12} viewBox="0 0 24 24" />
+        <NextIcon width={12} height={12} viewBox="0 0 24 24" aria-hidden="true" />
       </button>
       <Button
         variant="icon-circle-white"
         className="bg-background-secondary h-6 w-6"
         aria-label="달력 열기"
-        icon={<CalendarIcon className="size-3" viewBox="0 0 16 16" />}
+        aria-expanded={isCalendarOpen}
+        icon={<CalendarIcon className="size-3" viewBox="0 0 16 16" aria-hidden="true" />}
         onClick={handleCalendarOpen}
       />
       {isCalendarOpen && (
-        <div className="z-calendar absolute top-10 right-[-12px] bg-white" ref={ref}>
+        <div className="z-calendar bg-background-primary absolute top-10 right-[-12px]" ref={ref}>
           <CalendarDate selectedDate={selectedDate} setSelectedDate={handleChangeDate} />
         </div>
       )}

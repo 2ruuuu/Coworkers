@@ -1,29 +1,35 @@
-import { useParams, usePathname } from 'next/navigation';
+'use client';
 
-import GroupItem from '@/components/sideBar/GroupItems';
-import type { GroupSectionProps } from '@/components/sideBar/type';
+import { usePathname } from 'next/navigation';
+
+import { ROUTES, isActivePath } from '@/constants/routes';
 import { cn } from '@/utils/cn';
 
+import GroupItem from './GroupItem';
+import type { SidebarGroup } from './type';
+
+interface GroupSectionProps {
+  groups: SidebarGroup[];
+  collapsed: boolean;
+}
+
 export default function GroupSection({ groups, collapsed }: GroupSectionProps) {
-  const params = useParams<{ id: string }>();
   const pathname = usePathname() ?? '';
-  const currentGroupId = Number(params?.id);
 
   return (
-    <section
+    <ul
+      aria-label="내 팀 목록"
       className={cn('flex flex-col gap-2 md:gap-4', collapsed ? 'items-center' : 'items-stretch')}
     >
       {groups.map((group) => (
-        <GroupItem
-          key={group.id}
-          id={group.id}
-          name={group.name}
-          route={group.route}
-          image={group.image}
-          selected={group.route ? pathname.startsWith(group.route) : group.id === currentGroupId}
-          collapsed={collapsed}
-        />
+        <li key={group.id}>
+          <GroupItem
+            {...group}
+            selected={isActivePath(pathname, ROUTES.team(group.id))}
+            collapsed={collapsed}
+          />
+        </li>
       ))}
-    </section>
+    </ul>
   );
 }

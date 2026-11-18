@@ -1,53 +1,28 @@
-import { redirect } from 'next/navigation';
+import { buildJoinTeamPath, readInvitationParams } from '@/utils/team/invitation';
 
-import { hasAuthTokens } from '@/utils/auth/token';
-
+import TeamCard from '../_components/TeamCard';
 import JoinTeamForm from './_components/JoinTeamForm';
 
 interface JoinTeamPageProps {
-  searchParams: Promise<{
-    email?: string;
-    token?: string;
-    userEmail?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-const createInitialTeamLink = ({
-  email,
-  token,
-  userEmail,
-}: Awaited<JoinTeamPageProps['searchParams']>) => {
-  if (!token) {
-    return '';
-  }
-
-  const params = new URLSearchParams({ token });
-  const invitationEmail = userEmail ?? email;
-
-  if (invitationEmail) {
-    params.set('userEmail', invitationEmail);
-  }
-
-  return `/jointeam?${params.toString()}`;
-};
-
-const JoinTeam = async ({ searchParams }: JoinTeamPageProps) => {
-  const resolvedSearchParams = await searchParams;
-  const initialTeamLink = createInitialTeamLink(resolvedSearchParams);
-  const isLoggedIn = await hasAuthTokens();
-
-  if (!isLoggedIn) {
-    const redirectPath = initialTeamLink || '/jointeam';
-    redirect(`/login?redirect=${encodeURIComponent(redirectPath)}`);
-  }
+const JoinTeamPage = async ({ searchParams }: JoinTeamPageProps) => {
+  const params = await searchParams;
+  // 로그인 확인은 (protected) 레이아웃이 처리하며, 로그인 후 이 경로(초대 정보 포함)로 돌아온다.
+  const invitation = readInvitationParams({
+    get: (key) => {
+      const value = params[key];
+      return typeof value === 'string' ? value : null;
+    },
+  });
+  const initialTeamLink = invitation ? buildJoinTeamPath(invitation) : '';
 
   return (
-    <div className="bg-background-primary rounded-[20px]">
-      <div className="px-[21px] py-[60px] md:px-[45px]">
-        <JoinTeamForm key={initialTeamLink} initialTeamLink={initialTeamLink} />
-      </div>
-    </div>
+    <TeamCard>
+      <JoinTeamForm key={initialTeamLink} initialTeamLink={initialTeamLink} />
+    </TeamCard>
   );
 };
 
-export default JoinTeam;
+export default JoinTeamPage;

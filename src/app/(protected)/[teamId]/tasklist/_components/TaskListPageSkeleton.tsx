@@ -36,7 +36,7 @@ const TaskListPageSkeleton = () => {
           ))}
         </aside>
 
-        <section className="bg-background-primary rounded-5 flex-1 p-4 md:p-7.5 xl:p-10">
+        <section className="bg-background-primary flex-1 rounded-[20px] p-4 md:p-7.5 xl:p-10">
           <div className="mb-10 flex items-center justify-between gap-4">
             <Skeleton className="h-7 w-36 rounded-md" />
             <Skeleton className="h-9 w-44 rounded-lg" />

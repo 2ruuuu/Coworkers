@@ -1,57 +1,49 @@
-import React from 'react';
-
 import Image from 'next/image';
 
 import ProfileDefaultIcon from '@/assets/icons/profile.svg?react';
 import { cn } from '@/utils/cn';
+import { normalizeImageUrl } from '@/utils/image';
 import { isAllowedImageUrl } from '@/utils/isAllowedImageUrl';
 
-import { ProfileElement, ProfileProps, ProfileSize } from './type';
+import type { ProfileProps, ProfileSize } from './type';
 
-const Profile = React.forwardRef<ProfileElement, ProfileProps>(
-  ({ className, src, size = 'md', alt = '프로필 이미지', ...props }, ref) => {
-    const baseStyles =
-      'inline-flex items-center justify-center overflow-hidden object-cover select-none shrink-0';
+const BASE_STYLES =
+  'inline-flex items-center justify-center overflow-hidden object-cover select-none shrink-0';
 
-    const sizeStyles: Record<ProfileSize, string> = {
-      lg: 'w-10 h-10 rounded-xl',
-      md: 'w-8 h-8 rounded-lg',
-      sm: 'w-6 h-6 rounded-md',
-    };
+const SIZE_STYLES: Record<ProfileSize, string> = {
+  lg: 'w-10 h-10 rounded-xl',
+  md: 'w-8 h-8 rounded-lg',
+  sm: 'w-6 h-6 rounded-md',
+};
 
-    const pixelSizes: Record<ProfileSize, number> = {
-      lg: 40,
-      md: 32,
-      sm: 24,
-    };
+const PIXEL_SIZES: Record<ProfileSize, number> = {
+  lg: 40,
+  md: 32,
+  sm: 24,
+};
 
-    if (!isAllowedImageUrl(src)) {
-      return (
-        <span
-          ref={ref as React.Ref<HTMLSpanElement>}
-          role="img"
-          aria-label="기본 프로필 이미지"
-          className={cn(baseStyles, sizeStyles[size], className)}
-        >
-          <ProfileDefaultIcon className="h-full w-full" aria-hidden="true" />
-        </span>
-      );
-    }
+/** 사용자 프로필 이미지. 허용되지 않은 이미지이거나 없으면 기본 아이콘을 보여준다. */
+const Profile = ({ className, src, size = 'md', alt, ...props }: ProfileProps) => {
+  const imageSrc = normalizeImageUrl(src);
 
+  if (!isAllowedImageUrl(imageSrc)) {
     return (
-      <Image
-        ref={ref as React.Ref<HTMLImageElement>}
-        src={src}
-        alt={alt}
-        width={pixelSizes[size]}
-        height={pixelSizes[size]}
-        className={cn(baseStyles, sizeStyles[size], className)}
-        {...props}
-      />
+      <span role="img" aria-label={alt} className={cn(BASE_STYLES, SIZE_STYLES[size], className)}>
+        <ProfileDefaultIcon className="h-full w-full" aria-hidden="true" />
+      </span>
     );
-  },
-);
+  }
 
-Profile.displayName = 'Profile';
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={PIXEL_SIZES[size]}
+      height={PIXEL_SIZES[size]}
+      className={cn(BASE_STYLES, SIZE_STYLES[size], className)}
+      {...props}
+    />
+  );
+};
 
 export default Profile;

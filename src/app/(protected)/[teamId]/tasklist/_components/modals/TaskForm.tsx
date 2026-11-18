@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import {
   Controller,
-  ControllerRenderProps,
+  type ControllerRenderProps,
   useFormContext,
   useFormState,
   useWatch,
@@ -10,26 +10,19 @@ import {
 
 import CalendarDate from '@/components/calendar/date/CalendarDate';
 import CalendarTime from '@/components/calendar/time/CalendarTime';
-import DropdownMd from '@/components/dropdown/DropdownMd';
+import DropdownSelect from '@/components/dropdown/DropdownSelect';
 import Input from '@/components/input/Input';
 import InputBox from '@/components/inputBox/InputBox';
-import { FREQUENCY_TEXT } from '@/constants/listItem';
-import { TimeState } from '@/types/time';
+import { TASK_DESCRIPTION_MAX_LENGTH, TASK_NAME_MAX_LENGTH } from '@/constants/limits';
+import { type TimeState } from '@/types/time';
 import { formatISODate } from '@/utils/date';
 
 import { FREQUENCY_OPTIONS } from '../../_constants/options';
-import { TaskFormValues } from '../../_schemas/task.schema';
-import { getFrequencyEnumValue } from '../../_utils/task';
+import { type TaskFormValues } from '../../_schemas/task.schema';
 import WeekdayPicker from './WeekdayPicker';
 
 const TaskForm = () => {
   const [focusedInput, setFocusedInput] = useState<'date' | 'time' | null>(null);
-
-  // const {
-  //   register,
-  //   control,
-  //   formState: { errors },
-  // } = useFormContext<TaskFormValues>();
 
   const { register, control } = useFormContext<TaskFormValues>();
   const { errors } = useFormState<TaskFormValues>({ control });
@@ -59,12 +52,15 @@ const TaskForm = () => {
       <div className="flex flex-col gap-4">
         <label htmlFor="task-name" className="text-text-primary text-lg font-medium">
           할 일 제목
-          <span className="text-status-danger ml-1">*</span>
+          <span className="text-status-danger ml-1" aria-hidden="true">
+            *
+          </span>
         </label>
         <Input
           {...register('name')}
           id="task-name"
           type="text"
+          maxLength={TASK_NAME_MAX_LENGTH}
           placeholder="할 일 제목을 입력해 주세요"
           className="min-w-0"
           isError={!!errors.name}
@@ -72,15 +68,19 @@ const TaskForm = () => {
         />
       </div>
 
-      <div className="flex flex-col gap-4">
-        <label htmlFor="task-start-date" className="text-text-primary text-lg font-medium">
+      <fieldset className="flex flex-col gap-4">
+        <legend className="text-text-primary mb-4 text-lg font-medium">
           시작 날짜 및 시간
-          <span className="text-status-danger ml-1">*</span>
-        </label>
+          <span className="text-status-danger ml-1" aria-hidden="true">
+            *
+          </span>
+        </legend>
         <div className="flex gap-2">
           <Input
             id="task-start-date"
             type="text"
+            aria-label="시작 날짜"
+            aria-expanded={focusedInput === 'date'}
             value={formatISODate(selectedDate)}
             placeholder="YYYY년 MM월 DD일"
             onClick={() => setFocusedInput((prev) => (prev === 'date' ? null : 'date'))}
@@ -89,6 +89,8 @@ const TaskForm = () => {
           <Input
             id="task-start-time"
             type="text"
+            aria-label="시작 시간"
+            aria-expanded={focusedInput === 'time'}
             value={formattedTime}
             placeholder="0:00"
             onClick={() => setFocusedInput((prev) => (prev === 'time' ? null : 'time'))}
@@ -120,29 +122,27 @@ const TaskForm = () => {
             )}
           />
         )}
-      </div>
+      </fieldset>
 
       <div className="flex flex-col gap-4">
-        <label className="text-text-primary text-lg font-medium">반복 설정</label>
+        <span className="text-text-primary text-lg font-medium">반복 설정</span>
         <Controller
           control={control}
           name="frequency"
           render={({ field }) => (
-            <DropdownMd
+            <DropdownSelect
+              label="반복 설정"
               options={FREQUENCY_OPTIONS}
-              onSelect={(selectedLabel) => {
-                field.onChange(getFrequencyEnumValue(selectedLabel));
-              }}
-            >
-              {FREQUENCY_TEXT[field.value]}
-            </DropdownMd>
+              value={field.value}
+              onChange={field.onChange}
+            />
           )}
         />
       </div>
 
       {selectedFrequency === 'WEEKLY' && (
-        <div className="flex flex-col gap-4">
-          <label className="text-text-primary text-lg font-medium">반복 요일</label>
+        <fieldset className="flex flex-col gap-4">
+          <legend className="text-text-primary mb-4 text-lg font-medium">반복 요일</legend>
           <Controller
             control={control}
             name="weekDays"
@@ -150,7 +150,7 @@ const TaskForm = () => {
               <WeekdayPicker selectedDays={field.value ?? []} onChange={field.onChange} />
             )}
           />
-        </div>
+        </fieldset>
       )}
 
       <div className="flex flex-col gap-4">
@@ -163,6 +163,7 @@ const TaskForm = () => {
           render={({ field }) => (
             <InputBox
               id="task-description"
+              maxLength={TASK_DESCRIPTION_MAX_LENGTH}
               placeholder="할 일에 대한 메모를 남겨주세요"
               className="w-full min-w-0"
               value={field.value || ''}

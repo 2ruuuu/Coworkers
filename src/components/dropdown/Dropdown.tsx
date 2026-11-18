@@ -1,49 +1,65 @@
-import { useEffect } from 'react';
+'use client';
 
 import { cn } from '@/utils/cn';
 
+import DropdownList from './DropdownList';
 import type { DropdownProps } from './type';
+import { useDropdown } from './useDropdown';
 
-const DROPDOWN_SIZE_STYLES = {
-  md: 'min-w-[120px] text-md',
-  sm: 'min-w-[94px] text-xs',
-};
-
-const Dropdown = ({ options, size = 'md', className, onSelect, onClose }: DropdownProps) => {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose?.();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+/**
+ * 트리거 버튼(케밥 아이콘 등)을 누르면 메뉴가 열리는 드롭다운.
+ * 열림 상태, 바깥 클릭/Escape 닫기, 키보드 이동을 내부에서 처리한다.
+ */
+const Dropdown = <T extends string>({
+  options,
+  onSelect,
+  trigger,
+  triggerLabel,
+  triggerClassName,
+  size = 'md',
+  align = 'right',
+  className,
+  menuClassName,
+  disabled,
+}: DropdownProps<T>) => {
+  const { isOpen, wrapperRef, triggerRef, triggerId, listId, close, toggle } = useDropdown();
 
   return (
-    <div
-      role="menu"
-      className={cn(
-        'border-border-primary bg-background-primary absolute top-full left-0 z-10 mt-1 rounded-xl border',
-        DROPDOWN_SIZE_STYLES[size],
-        className,
+    <div ref={wrapperRef} className={cn('relative inline-flex', className)}>
+      <button
+        ref={triggerRef}
+        id={triggerId}
+        type="button"
+        aria-label={triggerLabel}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listId : undefined}
+        disabled={disabled}
+        className={cn(
+          'focus-visible:ring-brand-primary inline-flex items-center justify-center rounded-md outline-none focus-visible:ring-2',
+          triggerClassName,
+        )}
+        onClick={(event) => {
+          event.stopPropagation();
+          toggle();
+        }}
+      >
+        {trigger}
+      </button>
+
+      {isOpen && (
+        <DropdownList
+          id={listId}
+          role="menu"
+          labelledBy={triggerId}
+          options={options}
+          size={size}
+          align={align}
+          className={menuClassName}
+          onSelect={onSelect}
+          onClose={close}
+        />
       )}
-    >
-      {options.map((option) => (
-        <button
-          type="button"
-          role="menuitem"
-          key={option.value}
-          className="hover:bg-background-secondary w-full px-3 py-3 text-left"
-          onClick={() => {
-            onSelect?.(option.value);
-            onClose?.();
-          }}
-        >
-          {option.label}
-        </button>
-      ))}
     </div>
   );
 };

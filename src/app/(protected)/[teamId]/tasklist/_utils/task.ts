@@ -1,69 +1,34 @@
-import { RequestCreateTaskRecurring, RequestUpdateTaskRecurring } from '@/apis/recurring/type';
-import { FrequencyType } from '@/apis/task/type';
-import { FREQUENCY_TEXT } from '@/constants/listItem';
+import type { RequestCreateTaskRecurring, RequestUpdateTaskRecurring } from '@/apis/recurring/type';
 
-import { TaskFormValues } from '../_schemas/task.schema';
+import type { TaskFormValues } from '../_schemas/task.schema';
 
-export const getFrequencyEnumValue = (label: string): FrequencyType => {
-  switch (label) {
-    case FREQUENCY_TEXT.DAILY:
-      return 'DAILY';
-    case FREQUENCY_TEXT.WEEKLY:
-      return 'WEEKLY';
-    case FREQUENCY_TEXT.MONTHLY:
-      return 'MONTHLY';
-    default:
-      return 'ONCE';
-  }
-};
-
+/** 반복 주기에 맞는 필드만 담아 반복 일정 생성 요청을 만든다. */
 export const createRecurringPayload = (
-  formValues: TaskFormValues,
+  { name, description, weekDays, frequency, date }: TaskFormValues,
   startDate: string,
 ): RequestCreateTaskRecurring => {
-  const { name, description, weekDays, frequency, date } = formValues;
-  const basePayload = {
-    name,
-    description,
-    startDate,
-  };
+  const basePayload = { name, description, startDate };
+
   switch (frequency) {
     case 'WEEKLY':
-      return {
-        ...basePayload,
-        frequencyType: 'WEEKLY',
-        weekDays: weekDays ?? [],
-      };
+      return { ...basePayload, frequencyType: 'WEEKLY', weekDays: weekDays ?? [] };
     case 'MONTHLY':
-      return {
-        ...basePayload,
-        frequencyType: 'MONTHLY',
-        monthDay: date.getDate(),
-      };
+      return { ...basePayload, frequencyType: 'MONTHLY', monthDay: date.getDate() };
     case 'DAILY':
-      return {
-        ...basePayload,
-        frequencyType: 'DAILY',
-      };
+      return { ...basePayload, frequencyType: 'DAILY' };
     case 'ONCE':
-      return {
-        ...basePayload,
-        frequencyType: 'ONCE',
-      };
+      return { ...basePayload, frequencyType: 'ONCE' };
   }
 };
 
+/** 반복 일정 수정 요청. 생성과 같은 규칙으로 주기에 맞는 필드만 보낸다. */
 export const updateRecurringPayload = (
   formValues: TaskFormValues,
   startDate: string,
 ): RequestUpdateTaskRecurring => {
-  const { name, description, weekDays, frequency, date } = formValues;
   return {
-    name,
-    description,
+    ...createRecurringPayload(formValues, startDate),
     startDate,
-    weekDays,
-    frequencyType: frequency,
-    monthDay: date.getDate(),
+    description: formValues.description,
   };
 };

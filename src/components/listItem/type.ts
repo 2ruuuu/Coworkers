@@ -1,4 +1,4 @@
-import { Task } from '@/apis/task/type';
+import { type Task } from '@/apis/task/type';
 
 export interface ListItemProps {
   task: Task;

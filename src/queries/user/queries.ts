@@ -1,80 +1,65 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { getMyProfile } from '@/apis/user';
-import type {
-  ChangePasswordRequest,
-  MessageResponse,
-  UpdateProfileRequest,
-} from '@/apis/user/type';
 import {
   changePasswordAction,
   deleteMyAccountAction,
   updateMyProfileAction,
-} from '@/app/(protected)/settings/_actions/settings.action';
+  uploadImageAction,
+} from '@/actions/user.action';
+import { ENDPOINTS } from '@/apis/endpoints';
+import type { Group, Profile } from '@/apis/user/type';
+import { unwrapActionResult } from '@/lib/action';
+import { bffGet } from '@/lib/bffFetcher';
+import { queryKeys } from '@/queries/queryKeys';
+import { useActionMutation } from '@/queries/useActionMutation';
 
-import { USER_QUERY_KEY } from './queryKey';
-
-export const useMeQuery = () => {
-  return useQuery({
-    queryKey: USER_QUERY_KEY.me,
-    queryFn: getMyProfile,
-    staleTime: 5 * 60 * 1000,
-  });
+export const userQueries = {
+  me: () =>
+    queryOptions({
+      queryKey: queryKeys.user.me(),
+      queryFn: () => bffGet<Profile>(ENDPOINTS.user.me),
+      staleTime: 5 * 60 * 1000,
+    }),
+  groups: () =>
+    queryOptions({
+      queryKey: queryKeys.user.groups(),
+      queryFn: () => bffGet<Group[]>(ENDPOINTS.user.groups),
+    }),
 };
 
 export const useUpdateMyProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<MessageResponse, Error, UpdateProfileRequest>({
-    mutationFn: async (payload) => {
-      const result = await updateMyProfileAction(payload);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY.me });
-    },
+  return useActionMutation(updateMyProfileAction, {
+    // 사이드바/헤더의 프로필도 같은 키를 사용하므로 함께 갱신된다.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.user.all }),
+    meta: { silentError: true },
   });
 };
 
 export const useChangePasswordMutation = () => {
-  const queryClient = useQueryClient();
+  return useActionMutation(changePasswordAction, {
+    meta: { silentError: true },
+  });
+};
 
-  return useMutation<MessageResponse, Error, ChangePasswordRequest>({
-    mutationFn: async (payload) => {
-      const result = await changePasswordAction(payload);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
+export const useUploadImageMutation = () => {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      return unwrapActionResult(await uploadImageAction(formData));
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY.me });
-    },
+    meta: { silentError: true },
   });
 };
 
 export const useDeleteMyAccountMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<MessageResponse, Error>({
-    mutationFn: async () => {
-      const result = await deleteMyAccountAction();
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    onSuccess: async () => {
-      await queryClient.removeQueries({ queryKey: USER_QUERY_KEY.me });
-    },
+  return useMutation({
+    mutationFn: async () => unwrapActionResult(await deleteMyAccountAction()),
+    onSuccess: () => queryClient.clear(),
+    meta: { silentError: true },
   });
 };

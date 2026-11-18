@@ -5,7 +5,7 @@ type PageIndicatorProps = {
 };
 
 const dotButtonClassName =
-  'focus-visible:ring-brand-primary rounded-full focus-visible:ring-2 focus-visible:outline-none';
+  'focus-visible:ring-brand-primary rounded-full outline-none focus-visible:ring-2';
 
 const PageIndicator = ({ currentPage, totalPages, onPageChange }: PageIndicatorProps) => {
   return (

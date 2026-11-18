@@ -1,12 +1,4 @@
-export interface User {
-  teamId: string;
-  id: number;
-  email: string;
-  nickname: string;
-  image: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { User } from '@/apis/user/type';
 
 export interface SignUpRequest {
   image?: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 
 export const MEDIA_QUERY = {
   mobile: '(max-width: 767px)',
@@ -9,21 +9,19 @@ export const MEDIA_QUERY = {
 } as const;
 type MediaQuery = (typeof MEDIA_QUERY)[keyof typeof MEDIA_QUERY];
 
+/** 미디어 쿼리 일치 여부. 서버 렌더에서는 false. (함수 메모이제이션은 React Compiler가 처리) */
 export default function useMediaQuery(query: MediaQuery) {
-  const subscribe = useCallback(
-    (callback: () => void) => {
-      const mediaQuery = window.matchMedia(query);
+  const subscribe = (callback: () => void) => {
+    const mediaQuery = window.matchMedia(query);
 
-      mediaQuery.addEventListener('change', callback);
+    mediaQuery.addEventListener('change', callback);
 
-      return () => {
-        mediaQuery.removeEventListener('change', callback);
-      };
-    },
-    [query],
-  );
+    return () => {
+      mediaQuery.removeEventListener('change', callback);
+    };
+  };
 
-  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  const getSnapshot = () => window.matchMedia(query).matches;
 
   return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }

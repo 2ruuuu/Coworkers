@@ -8,7 +8,8 @@ export interface ReplyProps {
   avatar: ReactNode;
   children: ReactNode;
   date: string;
-  onMenuClick?: () => void;
+  /** 오른쪽 위에 표시할 메뉴 (수정/삭제 드롭다운 등) */
+  menu?: ReactNode;
 }
 
 export interface ReplyEditProps {
@@ -18,4 +19,7 @@ export interface ReplyEditProps {
   onChange: (value: string) => void;
   onCancel: () => void;
   onSubmit: () => void;
+  isSubmitting?: boolean;
+  /** 입력 가능한 최대 글자 수 */
+  maxLength?: number;
 }

@@ -1,20 +1,10 @@
-import clientFetcher from '@/lib/clientFetcher';
+import { ENDPOINTS } from '@/apis/endpoints';
+import publicFetcher from '@/lib/publicFetcher';
 
-import type { AuthResponse, RefreshTokenResponse, SignInRequest, SignUpRequest } from './type';
+import type { AuthResponse, SignUpRequest } from './type';
 
+// 회원가입 (공개 API)
 export const signUp = async (body: SignUpRequest) => {
-  const response = await clientFetcher.post<AuthResponse>('/auth/signUp', body);
-  return response.data;
-};
-
-export const signIn = async (body: SignInRequest) => {
-  const response = await clientFetcher.post<AuthResponse>('/auth/signIn', body);
-  return response.data;
-};
-
-export const refreshToken = async (token: string) => {
-  const response = await clientFetcher.post<RefreshTokenResponse>('/auth/refresh-token', {
-    token,
-  });
+  const response = await publicFetcher.post<AuthResponse>(ENDPOINTS.auth.signUp, body);
   return response.data;
 };

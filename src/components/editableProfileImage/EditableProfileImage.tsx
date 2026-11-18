@@ -64,7 +64,9 @@ const EditableProfileImage = ({
         </div>
       )}
 
-      <label className={`${style.button} cursor-pointer`}>
+      <label
+        className={`${style.button} focus-within:ring-brand-primary cursor-pointer focus-within:ring-2`}
+      >
         <input
           type="file"
           accept="image/*"

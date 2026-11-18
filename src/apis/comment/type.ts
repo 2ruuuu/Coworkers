@@ -1,3 +1,5 @@
+import type { UserSummary } from '@/apis/user/type';
+
 export interface CommentPathParams {
   taskId: number;
 }
@@ -14,14 +16,8 @@ export interface UpdateCommentRequest extends CommentDetailPathParams {
   content: string;
 }
 
-export interface CommentUser {
-  image: string | null;
-  nickname: string;
-  id: number;
-}
-
 export interface Comment {
-  user: CommentUser;
+  user: UserSummary;
   userId: number;
   taskId: number;
   updatedAt: string;

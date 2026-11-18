@@ -1,12 +1,11 @@
-import Image from 'next/image';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import CheckBlue from '@/assets/icons/check_blue.svg';
-import CheckWhite from '@/assets/icons/check_white.svg';
-import HeartEmpty from '@/assets/icons/heart_empty.svg';
-import HeartFill from '@/assets/icons/heart_fill.svg';
-import PlusGray from '@/assets/icons/plus_gray.svg';
-import PlusWhite from '@/assets/icons/plus_white.svg';
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import CheckBlueIcon from '@/assets/icons/check_blue.svg?react';
+import CheckWhiteIcon from '@/assets/icons/check_white.svg?react';
+import HeartEmptyIcon from '@/assets/icons/heart_empty.svg?react';
+import HeartFillIcon from '@/assets/icons/heart_fill.svg?react';
+import PlusGrayIcon from '@/assets/icons/plus_gray.svg?react';
+import PlusWhiteIcon from '@/assets/icons/plus_white.svg?react';
 
 import Button from './Button';
 
@@ -26,6 +25,9 @@ const meta: Meta<typeof Button> = {
         'icon-circle-white',
         'input-btn',
       ],
+    },
+    isLoading: {
+      control: 'boolean',
     },
     buttonState: {
       control: 'select',
@@ -50,16 +52,12 @@ const meta: Meta<typeof Button> = {
       ],
       mapping: {
         None: undefined,
-        Check_Blue: <Image src={CheckBlue.src || CheckBlue} alt="check" width={16} height={16} />,
-        Check_White: (
-          <Image src={CheckWhite.src || CheckWhite} alt="check" width={16} height={16} />
-        ),
-        Plus_White: <Image src={PlusWhite.src || PlusWhite} alt="plus" width={24} height={24} />,
-        Plus_Gray: <Image src={PlusGray.src || PlusGray} alt="plus" width={16} height={16} />,
-        Heart_Fill: <Image src={HeartFill.src || HeartFill} alt="heart" width={16} height={16} />,
-        Heart_Empty: (
-          <Image src={HeartEmpty.src || HeartEmpty} alt="heart" width={16} height={16} />
-        ),
+        Check_Blue: <CheckBlueIcon width={16} height={16} aria-hidden="true" />,
+        Check_White: <CheckWhiteIcon width={16} height={16} aria-hidden="true" />,
+        Plus_White: <PlusWhiteIcon width={24} height={24} aria-hidden="true" />,
+        Plus_Gray: <PlusGrayIcon width={16} height={16} aria-hidden="true" />,
+        Heart_Fill: <HeartFillIcon width={16} height={16} aria-hidden="true" />,
+        Heart_Empty: <HeartEmptyIcon width={16} height={16} aria-hidden="true" />,
       },
     },
   },
@@ -105,19 +103,19 @@ export const AllVariants: Story = {
         <Button
           {...args}
           variant="icon-circle"
-          icon={<Image src={PlusWhite.src || PlusWhite} alt="plus" width={24} height={24} />}
+          icon={<PlusWhiteIcon width={24} height={24} aria-hidden="true" />}
         />
 
         <Button
           {...args}
           variant="icon-circle-white"
-          icon={<Image src={PlusGray.src || PlusGray} alt="plus" width={24} height={24} />}
+          icon={<PlusGrayIcon width={24} height={24} aria-hidden="true" />}
         />
 
         <Button
           {...args}
           variant="input-btn"
-          icon={<Image src={PlusGray.src || PlusGray} alt="plus" width={16} height={16} />}
+          icon={<PlusGrayIcon width={16} height={16} aria-hidden="true" />}
         >
           할 일
         </Button>
@@ -147,5 +145,14 @@ export const FullWidth: Story = {
     variant: 'primary-filled',
     children: '전체 너비 버튼',
     fullWidth: true,
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    variant: 'primary-filled',
+    children: '저장하기',
+    isLoading: true,
+    loadingLabel: '저장 중...',
   },
 };

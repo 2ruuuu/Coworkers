@@ -78,14 +78,14 @@ const SignupFormSection = () => {
         {...signupForm.register('passwordConfirmation')}
       />
 
-      <Button type="submit" className="my-4" disabled={isPending || !signupForm.formState.isValid}>
-        {isPending ? (
-          <span className="flex items-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          </span>
-        ) : (
-          '회원가입'
-        )}
+      <Button
+        type="submit"
+        className="my-4"
+        isLoading={isPending}
+        loadingLabel="가입 중..."
+        disabled={!signupForm.formState.isValid}
+      >
+        회원가입
       </Button>
     </form>
   );

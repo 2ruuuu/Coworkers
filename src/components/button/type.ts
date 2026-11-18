@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 export type ButtonVariant =
   | 'primary-filled' //배경 있는 파란 버튼 (생성하기)
@@ -17,4 +17,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   buttonState?: ButtonState;
   icon?: React.ReactNode;
   fullWidth?: boolean;
+  /** true면 스피너를 표시하고 버튼을 비활성화한다. */
+  isLoading?: boolean;
+  /** 로딩 중 스크린리더에 읽힐 문구 */
+  loadingLabel?: string;
 }

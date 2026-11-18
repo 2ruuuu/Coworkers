@@ -1,48 +1,51 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getArticleDetailServer } from '@/apis/article/server';
 import { getMyProfileServer } from '@/apis/user/server';
-import EditorClient from '@/app/(protected)/articles/write/_components/EditorClient';
+import { handleServerApiError } from '@/lib/auth/session';
+import { ApiError } from '@/lib/error';
+import { stringIdSchema } from '@/schemas/common.schema';
 
-const EditArticlePage = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
-  const article = await getArticleDetailServer(`${id}`);
-  let currentUserId = '';
+import ArticlePageShell from '../../_components/ArticlePageShell';
+import EditorClient from '../../write/_components/EditorClient';
 
-  try {
-    const profile = await getMyProfileServer();
-    currentUserId = String(profile.id);
-  } catch {
+interface EditArticlePageProps {
+  params: Promise<{ id: string }>;
+}
+
+const EditArticlePage = async ({ params }: EditArticlePageProps) => {
+  const parsedId = stringIdSchema.safeParse((await params).id);
+
+  if (!parsedId.success) {
     notFound();
   }
 
-  if (currentUserId !== String(article.writer.id)) {
+  const [article, profile] = await Promise.all([
+    getArticleDetailServer(parsedId.data),
+    getMyProfileServer(),
+  ]).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    return handleServerApiError(error);
+  });
+
+  // 작성자 본인만 수정할 수 있다.
+  if (String(profile.id) !== String(article.writer.id)) {
     notFound();
   }
 
   return (
-    <div className="mx-auto flex min-h-screen px-4 pt-5 md:p-20">
-      <main className="min-h-screen w-full">
-        <div className="bg-background-primary mx-auto flex w-full flex-col gap-4 rounded-2xl px-5 py-10 md:px-10 md:py-14 lg:max-w-[900px]">
-          <h1 className="mb-8 text-xl font-semibold md:text-2xl">게시글 수정</h1>
-          <EditorClient
-            mode="edit"
-            defaultValues={{
-              id: `${article.id}`,
-              title: article.title,
-              content: article.content,
-              image: article.image ?? null,
-            }}
-          />
-        </div>
-        <div className="mt-5 flex w-full justify-center pr-2">
-          <Link href="/articles" className="text-text-default">
-            <span className="text-lg">목록으로</span>
-          </Link>
-        </div>
-      </main>
-    </div>
+    <ArticlePageShell narrow>
+      <h1 className="mb-8 text-xl font-semibold md:text-2xl">게시글 수정</h1>
+      <EditorClient
+        mode="edit"
+        articleId={parsedId.data}
+        defaultValues={{
+          title: article.title,
+          content: article.content,
+          image: article.image ?? null,
+        }}
+      />
+    </ArticlePageShell>
   );
 };
 

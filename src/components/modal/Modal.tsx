@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useId, useSyncExternalStore } from 'react';
+import { useEffect, useId, useRef, useSyncExternalStore } from 'react';
 import type { MouseEvent } from 'react';
+
 import { createPortal } from 'react-dom';
 
 import AlertIcon from '@/assets/icons/alert.svg?react';
@@ -34,8 +35,15 @@ const subscribeToClientStore = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-let openModalsCount = 0;
+/** 열린 모달 스택. Escape와 포커스 트랩은 가장 위의 모달에만 적용한다. */
+const openModalStack: string[] = [];
 let originalBodyOverflow = '';
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const getFocusableElements = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 
 const getActionButtonLabel = ({ isLoading, label, loadingLabel = '처리 중' }: ModalAction) => {
   if (isLoading) {
@@ -63,6 +71,7 @@ const ModalButton = ({ action, variant, modalVariant }: ModalButtonProps) => {
       variant={getModalButtonVariant(variant, modalVariant)}
       className="h-10 min-w-0 flex-1 rounded-md px-4 py-0 text-xs font-semibold"
       disabled={action.disabled || action.isLoading}
+      aria-busy={action.isLoading || undefined}
       onClick={action.onClick}
     >
       {getActionButtonLabel(action)}
@@ -107,37 +116,89 @@ const Modal = ({
   );
   const hasFooter = Boolean(primaryAction || secondaryAction);
 
+  const modalId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+
   useEffect(() => {
-    if (!isOpen) {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    if (!isOpen || !isClient) {
       return;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
+    const previouslyFocusedElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const isTopModal = () => openModalStack[openModalStack.length - 1] === modalId;
 
-    openModalsCount += 1;
+    openModalStack.push(modalId);
 
-    if (openModalsCount === 1) {
+    if (openModalStack.length === 1) {
       originalBodyOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
     }
 
-    window.addEventListener('keydown', handleKeyDown);
+    // 열리면 모달 안의 첫 번째 입력 요소(없으면 대화상자 자체)로 포커스를 옮긴다.
+    const dialog = dialogRef.current;
+    if (dialog) {
+      const focusables = getFocusableElements(dialog);
+      const firstField = focusables.find((element) =>
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName),
+      );
+      (firstField ?? dialog).focus();
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isTopModal() || !dialogRef.current) {
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+
+      // Tab 포커스가 모달 밖으로 나가지 않도록 처음/끝에서 순환시킨다.
+      if (event.key === 'Tab') {
+        const focusables = getFocusableElements(dialogRef.current);
+
+        if (focusables.length === 0) {
+          event.preventDefault();
+          return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      openModalsCount = Math.max(openModalsCount - 1, 0);
+      const index = openModalStack.indexOf(modalId);
+      if (index !== -1) openModalStack.splice(index, 1);
 
-      if (openModalsCount === 0) {
+      if (openModalStack.length === 0) {
         document.body.style.overflow = originalBodyOverflow;
         originalBodyOverflow = '';
       }
 
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
+      // 닫히면 모달을 열었던 요소로 포커스를 돌려준다.
+      previouslyFocusedElement?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, isClient, modalId]);
 
   if (!isClient || !isOpen) {
     return null;
@@ -155,12 +216,14 @@ const Modal = ({
       onClick={handleOverlayClick}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'bg-background-primary relative max-h-[calc(100dvh-64px)] overflow-y-auto rounded-2xl px-6 py-6',
+          'bg-background-primary relative max-h-[calc(100dvh-64px)] overflow-y-auto rounded-2xl px-6 py-6 outline-none',
           'shadow-[0_16px_40px_rgb(15_23_42/0.18)]',
           MODAL_SIZE_CLASS[size],
           className,
@@ -170,7 +233,7 @@ const Modal = ({
           <button
             type="button"
             aria-label={closeButtonLabel}
-            className="hover:bg-background-secondary focus:ring-brand-primary absolute top-3 right-3 flex size-5 items-center justify-center rounded-sm transition-colors focus:ring-2 focus:outline-none"
+            className="hover:bg-background-secondary focus-visible:ring-brand-primary absolute top-3 right-3 flex size-5 items-center justify-center rounded-sm transition-colors outline-none focus-visible:ring-2"
             onClick={onClose}
           >
             <CloseIcon />
@@ -178,9 +241,7 @@ const Modal = ({
         )}
 
         <div className="flex flex-col items-center px-4 text-center">
-          {variant === 'danger' && (
-            <AlertIcon className="mb-4 size-6" aria-hidden="true" />
-          )}
+          {variant === 'danger' && <AlertIcon className="mb-4 size-6" aria-hidden="true" />}
 
           <h2 id={titleId} className="text-text-primary text-sm font-semibold">
             {title}

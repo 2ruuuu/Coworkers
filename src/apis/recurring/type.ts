@@ -1,4 +1,4 @@
-type FrequencyType = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONCE';
+import type { FrequencyType } from '@/apis/task/type';
 
 interface RequestBaseTaskRecurring {
   name: string;

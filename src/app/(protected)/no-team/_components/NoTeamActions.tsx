@@ -1,9 +1,10 @@
 import Link from 'next/link';
 
+import { ROUTES } from '@/constants/routes';
 import { cn } from '@/utils/cn';
 
 const buttonBaseClass =
-  'md:text-md inline-flex h-12 w-full min-w-0 items-center justify-center rounded-lg px-0 py-0 text-xs font-medium transition-all duration-200 ease-in-out focus:outline-none';
+  'md:text-md inline-flex h-12 w-full min-w-0 items-center justify-center rounded-lg px-0 py-0 text-xs font-medium transition-all duration-200 ease-in-out outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2';
 
 const teamCreateLinkClass = cn(
   buttonBaseClass,
@@ -18,11 +19,11 @@ const teamJoinLinkClass = cn(
 export default function NoTeamActions() {
   return (
     <div className="mt-8 flex w-full max-w-46.5 flex-col gap-2.5 md:mt-12">
-      <Link href="/addteam" className={teamCreateLinkClass}>
+      <Link href={ROUTES.ADD_TEAM} className={teamCreateLinkClass}>
         팀 생성하기
       </Link>
 
-      <Link href="/jointeam" className={teamJoinLinkClass}>
+      <Link href={ROUTES.JOIN_TEAM} className={teamJoinLinkClass}>
         팀 참여하기
       </Link>
     </div>

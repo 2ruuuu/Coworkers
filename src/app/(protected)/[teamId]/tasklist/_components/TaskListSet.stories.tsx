@@ -1,6 +1,7 @@
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 
-import { MOCK_TASKLISTS } from '../_constants/mockData';
+import { MOCK_TASKLISTS } from '@/mocks/taskList';
+
 import TaskListSet from './TaskListSet';
 
 const meta = {
