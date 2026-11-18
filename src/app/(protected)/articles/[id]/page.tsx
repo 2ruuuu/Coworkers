@@ -1,63 +1,71 @@
-import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
 import { getArticleDetailServer } from '@/apis/article/server';
-import { getArticleComments } from '@/apis/articleComment';
-import { getMyProfileServer } from '@/apis/user/server';
-import CommentSection from '@/app/(protected)/articles/_components/articlesDetail/CommentSection';
-import ArticleContent from '@/app/(protected)/articles/_components/articlesDetail/Content';
-import ArticleHeader from '@/app/(protected)/articles/_components/articlesDetail/Header';
-import LikeButton from '@/app/(protected)/articles/_components/articlesDetail/LikeButton';
-import { formatDate } from '@/utils/formatDate';
+import { getArticleCommentsServer } from '@/apis/articleComment/server';
+import { handleServerApiError } from '@/lib/auth/session';
+import { ApiError } from '@/lib/error';
+import { getQueryClient } from '@/lib/queryClient';
+import { ARTICLE_COMMENTS_PAGE_SIZE } from '@/queries/article/queries';
+import { queryKeys } from '@/queries/queryKeys';
+import { stringIdSchema } from '@/schemas/common.schema';
+import { formatDate } from '@/utils/date';
 
-const ArticleDetailPage = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
-  const article = await getArticleDetailServer(`${id}`);
-  const comments = await getArticleComments({ articleId: `${id}`, limit: 10, cursor: 0 });
-  let currentUserIdentifiers: string[] = [];
-  let currentUserId = '';
+import ArticlePageShell from '../_components/ArticlePageShell';
+import CommentSection from '../_components/articlesDetail/CommentSection';
+import ArticleContent from '../_components/articlesDetail/Content';
+import ArticleHeader from '../_components/articlesDetail/Header';
+import LikeButton from '../_components/articlesDetail/LikeButton';
 
-  try {
-    const profile = await getMyProfileServer();
-    currentUserId = String(profile.id);
-    currentUserIdentifiers = [String(profile.id), profile.teamId].filter(Boolean);
-  } catch {
-    currentUserId = '';
-    currentUserIdentifiers = [];
+interface ArticleDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+const ArticleDetailPage = async ({ params }: ArticleDetailPageProps) => {
+  const parsedId = stringIdSchema.safeParse((await params).id);
+
+  if (!parsedId.success) {
+    notFound();
   }
 
-  const formattedDate = formatDate(article.createdAt);
-  return (
-    <div className="mx-auto flex min-h-screen px-4 pt-5 md:p-22">
-      <main className="min-h-screen w-full">
-        <div className="bg-background-primary mx-auto flex w-full flex-col gap-4 rounded-2xl px-5 py-10 md:px-10 md:py-14">
-          <ArticleHeader
-            id={`${article.id}`}
-            title={article.title}
-            writer={article.writer.nickname}
-            writerImage={article.writer.image}
-            createdAt={formattedDate}
-            isAuthor={currentUserId === String(article.writer.id)}
-          />
-          <ArticleContent content={article.content} image={article.image} />
-          <LikeButton
-            articleId={`${article.id}`}
-            initialIsLiked={article.isLiked}
-            initialLikeCount={article.likeCount}
-          />
-          <CommentSection
-            articleId={`${article.id}`}
-            comments={comments.list}
-            currentUserIdentifiers={currentUserIdentifiers}
-          />
-        </div>
+  const articleId = parsedId.data;
 
-        <div className="mt-5 flex w-full justify-center pr-2">
-          <Link href="/articles" className="text-text-default">
-            <span className="text-lg">목록으로</span>
-          </Link>
-        </div>
-      </main>
-    </div>
+  // 게시글과 첫 댓글 페이지를 동시에 불러온다.
+  const [article, firstCommentsPage] = await Promise.all([
+    getArticleDetailServer(articleId),
+    getArticleCommentsServer({ articleId, limit: ARTICLE_COMMENTS_PAGE_SIZE }),
+  ]).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    return handleServerApiError(error);
+  });
+
+  const queryClient = getQueryClient();
+  queryClient.setQueryData(queryKeys.article.comments(articleId), {
+    pages: [firstCommentsPage],
+    pageParams: [null],
+  });
+
+  return (
+    <ArticlePageShell>
+      <ArticleHeader
+        id={articleId}
+        title={article.title}
+        writerId={String(article.writer.id)}
+        writer={article.writer.nickname}
+        writerImage={article.writer.image}
+        createdAt={formatDate(article.createdAt)}
+      />
+      <ArticleContent content={article.content} image={article.image} />
+      <LikeButton
+        articleId={articleId}
+        initialIsLiked={article.isLiked}
+        initialLikeCount={article.likeCount}
+      />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <CommentSection articleId={articleId} commentCount={article.commentCount} />
+      </HydrationBoundary>
+    </ArticlePageShell>
   );
 };
 

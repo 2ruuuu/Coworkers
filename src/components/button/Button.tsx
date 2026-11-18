@@ -2,7 +2,7 @@ import React from 'react';
 
 import { cn } from '@/utils/cn';
 
-import { ButtonProps, ButtonVariant } from './type';
+import { type ButtonProps, type ButtonVariant } from './type';
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
@@ -14,12 +14,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth,
       children,
       disabled,
+      isLoading = false,
+      loadingLabel = '처리 중...',
       ...props
     },
     ref,
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-200 ease-in-out focus:outline-none text-lg gap-2 rounded-xl';
+      'inline-flex items-center justify-center font-medium transition-all duration-200 ease-in-out outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 text-lg gap-2 rounded-xl';
 
     const variantStyles: Record<ButtonVariant, string> = {
       'primary-filled':
@@ -37,13 +39,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'w-12 h-12 rounded-full flex items-center justify-center p-0 bg-brand-primary text-background-primary hover:bg-interaction-hover active:bg-interaction-pressed disabled:bg-interaction-inactive disabled:text-background-primary shadow-sm',
 
       'icon-circle-white':
-        'w-12 h-12 rounded-full flex items-center justify-center p-0 bg-white text-background-primary hover:bg-interaction-hover active:bg-interaction-pressed disabled:bg-interaction-inactive disabled:text-background-primary shadow-sm',
+        'w-12 h-12 rounded-full flex items-center justify-center p-0 border border-border-primary bg-background-primary text-icon-primary hover:bg-background-secondary active:bg-background-tertiary disabled:text-interaction-inactive shadow-sm',
 
       'input-btn':
         'w-full max-w-md justify-between bg-background-secondary hover:bg-background-tertiary active:bg-border-primary text-text-secondary px-4 py-3 border border-border-primary',
     };
 
-    const isDisabled = disabled || buttonState === 'disabled';
+    const isDisabled = disabled || isLoading || buttonState === 'disabled';
 
     const isCircleVariant = variant === 'icon-circle' || variant === 'icon-circle-white';
 
@@ -51,14 +53,23 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
+        aria-busy={isLoading || undefined}
         className={cn(baseStyles, variantStyles[variant], fullWidth && 'w-full', className)}
         {...props}
       >
-        {variant === 'input-btn' ? (
+        {isLoading ? (
+          <>
+            <span
+              className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            />
+            <span className="sr-only">{loadingLabel}</span>
+          </>
+        ) : variant === 'input-btn' ? (
           <>
             {children && <span>{children}</span>}
             {icon && (
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200/60 bg-white shadow-sm">
+              <span className="border-border-primary bg-background-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm">
                 <span className="flex h-5 w-5 items-center justify-center">{icon}</span>
               </span>
             )}

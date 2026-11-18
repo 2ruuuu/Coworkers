@@ -1,8 +1,8 @@
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import DateItem from './DateItem';
-import { DateItemProps } from './type';
+import { type DateItemProps } from './type';
 
 const meta = {
   component: DateItem,

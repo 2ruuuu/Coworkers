@@ -1,29 +1,38 @@
-import { User } from '@/apis/auth/type';
-import LoggedInFooter from '@/components/sideBar/LoggedInFooter';
-import LoggedOutFooter from '@/components/sideBar/LoggedOutFooter';
+import type { User } from '@/apis/user/type';
+import SettingsIcon from '@/assets/icons/setting.svg?react';
+import Profile from '@/components/profile/Profile';
+import { cn } from '@/utils/cn';
 
-export default function SideBarFooter({
-  collapsed,
-  user,
-  isLoggedIn,
-  isAuthLoading,
-}: {
+import ProfileMenu from './ProfileMenu';
+
+interface SidebarFooterProps {
   collapsed: boolean;
   user: User | undefined;
-  isLoggedIn: boolean;
-  isAuthLoading: boolean;
-}) {
-  if (isAuthLoading) {
-    return <div className="h-16" />;
+}
+
+export default function SidebarFooter({ collapsed, user }: SidebarFooterProps) {
+  if (!user) {
+    return <div className="border-border-primary h-16 border-t" aria-hidden="true" />;
   }
 
-  if (!isLoggedIn) {
-    return <LoggedOutFooter collapsed={collapsed} />;
-  }
+  return (
+    <div
+      className={cn(
+        'border-border-primary relative flex w-full items-center border-t pt-6',
+        collapsed ? 'justify-center' : 'justify-between',
+      )}
+    >
+      <div className="flex min-w-0 flex-row items-center gap-3">
+        <Profile src={user.image} size="lg" alt={`${user.nickname} 프로필 이미지`} />
+        {!collapsed && <span className="truncate">{user.nickname}</span>}
+      </div>
 
-  if (user === undefined) {
-    return <div className="h-16" />;
-  }
-
-  return <LoggedInFooter isLoggedIn={isLoggedIn} collapsed={collapsed} user={user} />;
+      {!collapsed && (
+        <ProfileMenu
+          placement="top"
+          trigger={<SettingsIcon className="h-6 w-6" aria-hidden="true" />}
+        />
+      )}
+    </div>
+  );
 }

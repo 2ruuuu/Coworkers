@@ -1,7 +1,8 @@
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { MOCK_TASKLISTS } from '../_constants/mockData';
+import { MOCK_TASKLISTS } from '@/mocks/taskList';
+
 import TaskListMain from './TaskListMain';
 
 const queryClient = new QueryClient();

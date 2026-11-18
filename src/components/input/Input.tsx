@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
-import { useState } from 'react';
+import React, { useId, useState } from 'react';
 
 import VisibilityFalseIcon from '@/assets/icons/visibility_false.svg?react';
 import VisibilityTrueIcon from '@/assets/icons/visibility_true.svg?react';
+import { cn } from '@/utils/cn';
 
 import type { InputProps } from './type';
 
@@ -18,11 +18,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       disabled = false,
       rightButtonText,
       onRightButtonClick,
+      className,
       ...props
     },
     ref,
   ) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const errorId = useId();
+    const hasErrorMessage = isError && Boolean(errorMessage);
 
     const inputType = type === 'password' && isPasswordVisible ? 'text' : type;
 
@@ -54,13 +57,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     disabled:hover:border-border-primary
     disabled:focus:border-border-primary
 `;
-    const inputClassName = `
-    ${baseStyle}
-    ${sizeStyle[size]}
-    ${defaultStyle}
-    ${isError ? errorStyle : ''}
-    ${disabled ? disabledStyle : ''}
-  `;
+    const inputClassName = cn(
+      baseStyle,
+      sizeStyle[size],
+      defaultStyle,
+      isError && errorStyle,
+      disabled && disabledStyle,
+      className,
+    );
 
     return (
       <div className="relative flex flex-col gap-2">
@@ -70,6 +74,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
             type={inputType}
             disabled={disabled}
+            aria-invalid={isError || undefined}
+            aria-describedby={
+              cn(props['aria-describedby'], hasErrorMessage && errorId) || undefined
+            }
             className={inputClassName}
           />
           {type === 'password' && !disabled && (
@@ -90,17 +98,18 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={onRightButtonClick}
-              className={`bg-brand-primary hover:bg-interaction-hover active:bg-interaction-pressed absolute top-1/2 right-2 -translate-y-1/2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50`}
+              className="bg-brand-primary hover:bg-interaction-hover active:bg-interaction-pressed text-background-primary absolute top-1/2 right-2 -translate-y-1/2 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {rightButtonText}
             </button>
           )}
         </div>
         <p
-          className={`text-xs ${isError && errorMessage ? 'text-status-danger' : 'text-transparent'}`}
+          id={errorId}
+          className={cn('text-xs', hasErrorMessage ? 'text-status-danger' : 'text-transparent')}
           aria-live="polite"
         >
-          {isError && errorMessage ? errorMessage : '\u00A0'}
+          {hasErrorMessage ? errorMessage : '\u00A0'}
         </p>
       </div>
     );

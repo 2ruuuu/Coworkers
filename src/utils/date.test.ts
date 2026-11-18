@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { generateHoursByInterval, generateMinutesByInterval, getWeekDatesAround } from './date';
+import {
+  addDaysToISODate,
+  formatDate,
+  generateHoursByInterval,
+  generateMinutesByInterval,
+  getServiceDate,
+  getWeekDatesAround,
+  parseISODate,
+  toServiceDate,
+} from './date';
 
 describe('date', () => {
   describe('generateMinutesByInterval', () => {
@@ -100,5 +109,61 @@ describe('getWeekDates', () => {
     // Assert
     expect(result.length).toBe(7);
     expect(result).toEqual(expected);
+  });
+
+  describe('getServiceDate (Asia/Seoul 기준)', () => {
+    it('UTC 15시 이후는 서울 기준 다음 날이다', () => {
+      expect(getServiceDate(new Date('2026-06-12T15:30:00.000Z'))).toBe('2026-06-13');
+    });
+
+    it('UTC 15시 이전은 같은 날이다', () => {
+      expect(getServiceDate(new Date('2026-06-12T14:59:59.000Z'))).toBe('2026-06-12');
+    });
+  });
+
+  describe('toServiceDate', () => {
+    it('날짜만 있는 문자열은 그대로 반환한다', () => {
+      expect(toServiceDate('2026-06-26')).toBe('2026-06-26');
+    });
+
+    it('시각이 포함된 문자열은 서울 기준 날짜로 변환한다', () => {
+      expect(toServiceDate('2026-06-24T15:00:00.000Z')).toBe('2026-06-25');
+    });
+
+    it('비어 있거나 잘못된 값은 undefined를 반환한다', () => {
+      expect(toServiceDate(null)).toBeUndefined();
+      expect(toServiceDate('invalid-date')).toBeUndefined();
+    });
+  });
+
+  describe('formatDate', () => {
+    it('서울 기준 YYYY. MM. DD 형식으로 반환한다', () => {
+      expect(formatDate('2026-06-12T15:30:00.000Z')).toBe('2026. 06. 13');
+    });
+
+    it('유효하지 않은 날짜 입력은 빈 문자열을 반환한다', () => {
+      expect(formatDate('not-a-date')).toBe('');
+    });
+  });
+
+  describe('addDaysToISODate', () => {
+    it('월/연도 경계를 넘어 계산한다', () => {
+      expect(addDaysToISODate('2026-12-31', 1)).toBe('2027-01-01');
+      expect(addDaysToISODate('2026-03-01', -1)).toBe('2026-02-28');
+    });
+  });
+
+  describe('parseISODate', () => {
+    it('YYYY-MM-DD를 로컬 자정 Date로 만든다', () => {
+      const date = parseISODate('2026-06-12');
+      expect(date?.getFullYear()).toBe(2026);
+      expect(date?.getMonth()).toBe(5);
+      expect(date?.getDate()).toBe(12);
+    });
+
+    it('형식이 다르면 undefined를 반환한다', () => {
+      expect(parseISODate('2026/06/12')).toBeUndefined();
+      expect(parseISODate(null)).toBeUndefined();
+    });
   });
 });

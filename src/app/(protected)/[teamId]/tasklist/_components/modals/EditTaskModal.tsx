@@ -4,13 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 
-import { Task } from '@/apis/task/type';
+import type { Task } from '@/apis/task/type';
 import Button from '@/components/button/Button';
 import Modal from '@/components/modal/Modal';
-import { getErrorMessage } from '@/lib/error';
-import { useUpdateRecurringTask, useUpdateTask } from '@/queries/task/queries';
+import { useUpdateRecurringTaskMutation, useUpdateTaskMutation } from '@/queries/task/queries';
 
-import { TaskFormValues, taskSchema } from '../../_schemas/task.schema';
+import { type TaskFormValues, taskSchema } from '../../_schemas/task.schema';
 import { createStartDate } from '../../_utils/date';
 import { updateRecurringPayload } from '../../_utils/task';
 import TaskForm from './TaskForm';
@@ -41,35 +40,37 @@ const EditTaskModal = ({ isOpen, onClose, task, groupId, taskListId }: EditTaskM
   });
 
   const { mutateAsync: updateRecurringTask, isPending: isPendingRecurringTask } =
-    useUpdateRecurringTask();
-
-  const { mutateAsync: updateTask, isPending: isPendingTask } = useUpdateTask();
+    useUpdateRecurringTaskMutation();
+  const { mutateAsync: updateTask, isPending: isPendingTask } = useUpdateTaskMutation();
 
   const handleSubmit = async (formValues: TaskFormValues) => {
     const startDate = createStartDate(formValues.date, formValues.time);
     const payload = updateRecurringPayload(formValues, startDate);
 
+    // 두 요청을 순서대로 보내 어느 단계에서 실패했는지 안내한다. (에러 토스트는 mutation이 띄움)
     try {
-      await Promise.all([
-        updateTask({
-          groupId,
-          taskListId,
-          taskId: task.id,
-          description: formValues.description ?? '',
-          name: formValues.name,
-        }),
-        updateRecurringTask({
-          groupId,
-          taskListId,
-          body: payload,
-          recurringId: task.recurringId,
-        }),
-      ]);
+      await updateTask({
+        groupId,
+        taskListId,
+        taskId: task.id,
+        description: formValues.description ?? '',
+        name: formValues.name,
+      });
+    } catch {
+      return;
+    }
 
+    try {
+      await updateRecurringTask({
+        groupId,
+        taskListId,
+        body: payload,
+        recurringId: task.recurringId,
+      });
       toast.success('할 일을 수정했습니다.');
       onClose();
-    } catch (error) {
-      toast.error(getErrorMessage(error, '할 일을 수정하지 못했습니다.'));
+    } catch {
+      toast('할 일 내용은 저장했지만 반복 설정은 수정하지 못했어요.');
     }
   };
 
@@ -87,9 +88,10 @@ const EditTaskModal = ({ isOpen, onClose, task, groupId, taskListId }: EditTaskM
           <TaskForm />
 
           <Button
+            type="submit"
             variant="primary-filled"
             fullWidth
-            disabled={isPendingRecurringTask || isPendingTask}
+            isLoading={isPendingRecurringTask || isPendingTask}
           >
             수정하기
           </Button>

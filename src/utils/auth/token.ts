@@ -5,21 +5,22 @@ import 'server-only';
 import {
   ACCESS_TOKEN_KEY,
   REFRESH_TOKEN_KEY,
+  type TokenCookieOptions,
   accessTokenCookieOptions,
+  getTokenCookieOptions,
   refreshTokenCookieOptions,
 } from './cookie';
 
 type TokenCookieKey = typeof ACCESS_TOKEN_KEY | typeof REFRESH_TOKEN_KEY;
-type TokenCookieOptions = typeof accessTokenCookieOptions;
 
 export type AuthTokens = {
   accessToken: string;
   refreshToken: string;
 };
 
-const setToken = async (key: TokenCookieKey, value: string, options: TokenCookieOptions) => {
+const setToken = async (key: TokenCookieKey, value: string, defaults: TokenCookieOptions) => {
   const store = await cookies();
-  store.set(key, value, options);
+  store.set(key, value, getTokenCookieOptions(value, defaults));
 };
 
 const getToken = async (key: TokenCookieKey) => {
@@ -51,9 +52,12 @@ export async function getAuthTokens() {
   };
 }
 
-export async function hasAuthTokens() {
-  const { accessToken, refreshToken } = await getAuthTokens();
-  return Boolean(accessToken && refreshToken);
+/**
+ * 로그인 세션이 유효한지 판단한다.
+ * access 토큰은 짧게 만료되어도 refresh 토큰으로 갱신할 수 있으므로 refresh 토큰 기준으로 본다.
+ */
+export async function hasAuthSession() {
+  return Boolean(await getRefreshToken());
 }
 
 export async function clearAuthTokens() {

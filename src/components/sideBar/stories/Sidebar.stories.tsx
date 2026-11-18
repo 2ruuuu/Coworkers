@@ -1,18 +1,37 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import SideBarView from '@/components/sideBar/SideBarView';
+import SidebarView from '@/components/sidebar/SidebarView';
 
-const meta: Meta<typeof SideBarView> = {
-  title: 'components/SideBar',
-  component: SideBarView,
+const MOCK_USER = {
+  id: 1,
+  nickname: 'John Doe',
+  email: 'john.doe@example.com',
+  image: null,
+  teamId: '1',
+  createdAt: '2026-06-19',
+  updatedAt: '2026-06-19',
+};
+
+const MOCK_GROUPS = [
+  { id: 1, name: '경영관리팀' },
+  { id: 2, name: '프로덕트팀' },
+];
+
+const meta = {
+  title: 'Components/Sidebar',
+  component: SidebarView,
   parameters: {
     layout: 'fullscreen',
     nextjs: {
       appDirectory: true,
-      navigation: {
-        pathname: '/',
-      },
+      navigation: { pathname: '/1' },
     },
+  },
+  args: {
+    collapsed: false,
+    groups: MOCK_GROUPS,
+    user: MOCK_USER,
+    onToggleCollapse: () => {},
   },
   decorators: [
     (Story) => (
@@ -21,60 +40,18 @@ const meta: Meta<typeof SideBarView> = {
       </div>
     ),
   ],
-};
+} satisfies Meta<typeof SidebarView>;
 
 export default meta;
 
-type Story = StoryObj<typeof SideBarView>;
+type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    groups: [],
-    isLoggedIn: true,
-  },
+export const Expanded: Story = {};
+
+export const Collapsed: Story = {
+  args: { collapsed: true },
 };
 
-export const LoggedOut: Story = {
-  args: {
-    groups: [],
-    isLoggedIn: false,
-  },
-};
-
-export const CollapsedLoggedIn: Story = {
-  render: () => (
-    <div className="w-[72px]">
-      <SideBarView
-        isLoggedIn={true}
-        isAuthLoading={false}
-        collapsed={true}
-        onToggleCollapse={() => {}}
-        groups={[]}
-        user={{
-          id: 1,
-          nickname: 'John Doe',
-          email: 'john.doe@example.com',
-          image: '/images/profile.jpg',
-          teamId: '1',
-          createdAt: '2026-06-19',
-          updatedAt: '2026-06-19',
-        }}
-      />
-    </div>
-  ),
-};
-
-export const CollapsedLoggedOut: Story = {
-  render: () => (
-    <div className="w-[72px]">
-      <SideBarView
-        isLoggedIn={false}
-        isAuthLoading={false}
-        collapsed={true}
-        onToggleCollapse={() => {}}
-        groups={[]}
-        user={undefined}
-      />
-    </div>
-  ),
+export const LoadingUser: Story = {
+  args: { user: undefined },
 };

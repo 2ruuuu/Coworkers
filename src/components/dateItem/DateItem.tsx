@@ -1,4 +1,4 @@
-import { DateItemProps } from './type';
+import { type DateItemProps } from './type';
 
 const DateItem = ({ date, isSelected, onClick }: DateItemProps) => {
   const day = date.getDate();

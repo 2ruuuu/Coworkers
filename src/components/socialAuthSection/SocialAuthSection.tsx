@@ -1,4 +1,4 @@
-import KakaoIcon from '@/assets/icons/kakaotalk.svg';
+import KakaoIcon from '@/assets/icons/kakaotalk.svg?react';
 import Divider from '@/components/divider/Divider';
 
 interface SocialAuthSectionProps {
@@ -16,8 +16,11 @@ const SocialAuthSection = ({ label, redirectPath }: SocialAuthSectionProps) => {
       <Divider className="mb-4" />
       <div className="flex items-center justify-between">
         <span className="text-md text-text-default">{label}</span>
-        <a href={kakaoLoginHref} className="text-md text-text-default flex items-center gap-2">
-          <KakaoIcon aria-hidden />
+        <a
+          href={kakaoLoginHref}
+          className="text-md text-text-default focus-visible:ring-brand-primary flex items-center gap-2 rounded-md outline-none focus-visible:ring-2"
+        >
+          <KakaoIcon aria-hidden="true" />
           <span>카카오 로그인</span>
         </a>
       </div>

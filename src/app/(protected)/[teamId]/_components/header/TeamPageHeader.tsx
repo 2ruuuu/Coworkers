@@ -1,22 +1,27 @@
 import SettingsIcon from '@/assets/icons/setting.svg?react';
+import Dropdown from '@/components/dropdown/Dropdown';
+import type { DropdownOption } from '@/components/dropdown/type';
 import Team from '@/components/team/Team';
 import type { TeamCardSize, TeamMember } from '@/components/team/type';
 import { cn } from '@/utils/cn';
 
 import type { TeamPageRole } from '../../type';
 
+type TeamMenuValue = 'EDIT' | 'DELETE';
+
+const TEAM_MENU_OPTIONS: DropdownOption<TeamMenuValue>[] = [
+  { label: '수정하기', value: 'EDIT' },
+  { label: '삭제하기', value: 'DELETE' },
+];
+
 interface TeamPageHeaderProps {
   name: string;
-  imageUrl?: string | null;
+  imageUrl: string | null;
   role: TeamPageRole;
   size: TeamCardSize;
   members: TeamMember[];
-  memberCount: number;
   completedTaskCount: number;
   totalTaskCount: number;
-  progressValue: number;
-  isSettingsOpen: boolean;
-  onSettingsClick: () => void;
   onEditClick: () => void;
   onDeleteClick: () => void;
 }
@@ -27,67 +32,47 @@ const TeamPageHeader = ({
   role,
   size,
   members,
-  memberCount,
   completedTaskCount,
   totalTaskCount,
-  progressValue,
-  isSettingsOpen,
-  onSettingsClick,
   onEditClick,
   onDeleteClick,
 }: TeamPageHeaderProps) => {
   const isAdmin = role === 'ADMIN';
   const isAdminLayout = isAdmin || size === 'lg';
 
+  const handleMenuSelect = (value: TeamMenuValue) => {
+    if (value === 'EDIT') onEditClick();
+    else onDeleteClick();
+  };
+
   return (
     <div className="relative">
       <Team
         name={name}
-        imageUrl={imageUrl ?? undefined}
+        imageUrl={imageUrl}
         members={members}
-        memberCount={memberCount}
+        memberCount={members.length}
         completedTaskCount={completedTaskCount}
         totalTaskCount={totalTaskCount}
-        progressValue={progressValue}
         variant={isAdminLayout ? 'admin' : 'user'}
         size={size}
         className={cn(
           'w-full',
           isAdminLayout
-            ? 'xl:rounded-5 min-h-37.75 gap-4 rounded-xl p-5 md:min-h-37.75 xl:min-h-59.75 xl:gap-6 xl:p-8 xl:[&_[role=progressbar]]:w-[calc(100%-32px)]'
+            ? 'min-h-37.75 gap-4 rounded-xl p-5 md:min-h-37.75 xl:min-h-59.75 xl:gap-6 xl:rounded-[20px] xl:p-8 xl:[&_[role=progressbar]]:w-[calc(100%-32px)]'
             : 'h-14 rounded-xl px-4 md:h-16 xl:h-16 xl:px-6',
         )}
       />
 
       {isAdmin && (
-        <button
-          type="button"
-          aria-label="팀 설정"
-          aria-expanded={isSettingsOpen}
-          className="hover:bg-background-secondary hover:text-brand-primary focus-visible:ring-brand-primary text-icon-primary absolute top-5 right-5 z-10 flex size-7 items-center justify-center rounded-md transition-all duration-200 focus-visible:ring-2 focus-visible:outline-none active:scale-95 xl:top-auto xl:right-6 xl:bottom-12.5"
-          onClick={onSettingsClick}
-        >
-          <SettingsIcon className="size-6" aria-hidden="true" />
-        </button>
-      )}
-
-      {isSettingsOpen && isAdmin && (
-        <div className="border-border-primary bg-background-primary absolute top-13 right-2 z-20 w-30 overflow-hidden rounded-xl border py-2 shadow-lg xl:top-47.5 xl:right-0">
-          <button
-            type="button"
-            className="hover:bg-background-secondary focus-visible:ring-brand-primary text-text-primary text-md w-full px-5 py-4 text-center transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            onClick={onEditClick}
-          >
-            수정하기
-          </button>
-          <button
-            type="button"
-            className="hover:bg-background-secondary focus-visible:ring-brand-primary text-text-primary text-md w-full px-5 py-4 text-center transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            onClick={onDeleteClick}
-          >
-            삭제하기
-          </button>
-        </div>
+        <Dropdown
+          options={TEAM_MENU_OPTIONS}
+          onSelect={handleMenuSelect}
+          trigger={<SettingsIcon className="size-6" aria-hidden="true" />}
+          triggerLabel="팀 설정"
+          triggerClassName="hover:bg-background-secondary hover:text-brand-primary text-icon-primary size-7 transition-all duration-200 active:scale-95"
+          className="absolute top-5 right-5 z-10 xl:top-auto xl:right-6 xl:bottom-12.5"
+        />
       )}
     </div>
   );

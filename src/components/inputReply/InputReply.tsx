@@ -28,13 +28,16 @@ const InputReply = ({
   size = 'sm',
   value,
   placeholder = '댓글을 달아주세요',
+  label = '댓글 입력',
+  disabled = false,
+  maxLength,
   onChange,
   onSubmit,
 }: InputReplyProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
 
-  const isDisabled = !value.trim();
+  const isDisabled = disabled || !value.trim();
   const isSmallSize = size === 'sm';
 
   useEffect(() => {
@@ -53,7 +56,7 @@ const InputReply = ({
   return (
     <div
       className={cn(
-        'border-border-primary relative min-h-12 w-full border bg-white py-4 pr-11 pl-4',
+        'border-border-primary bg-background-primary focus-within:border-interaction-pressed relative min-h-12 w-full border py-4 pr-11 pl-4',
         roundedClass,
       )}
     >
@@ -61,6 +64,9 @@ const InputReply = ({
         ref={textareaRef}
         value={value}
         placeholder={placeholder}
+        aria-label={label}
+        disabled={disabled}
+        maxLength={maxLength}
         rows={1}
         onChange={(event) => onChange(event.target.value)}
         className={cn(
@@ -75,7 +81,7 @@ const InputReply = ({
         disabled={isDisabled}
         onClick={onSubmit}
         className={cn(
-          'absolute flex size-6 items-center justify-center rounded-full text-white transition-colors',
+          'focus-visible:ring-brand-primary absolute flex size-6 items-center justify-center rounded-full text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
           sizeClass[size].button,
           isDisabled ? 'bg-icon-primary cursor-not-allowed' : 'bg-icon-brand cursor-pointer',
         )}

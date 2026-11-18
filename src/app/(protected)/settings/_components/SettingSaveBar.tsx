@@ -1,4 +1,4 @@
-import AlertIcon from '@/assets/icons/alert.svg';
+import AlertIcon from '@/assets/icons/alert.svg?react';
 
 interface SettingSaveBarProps {
   description: string;
@@ -23,7 +23,7 @@ const SettingSaveBar = ({
         type="button"
         disabled={disabled}
         onClick={onSave}
-        className="bg-background-primary text-brand-primary rounded-lg px-4 py-2"
+        className="bg-background-primary text-brand-primary focus-visible:ring-background-primary rounded-lg px-4 py-2 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-70"
       >
         {buttonText}
       </button>

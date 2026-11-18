@@ -6,4 +6,9 @@ export interface InputReplyProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   placeholder?: string;
+  /** 스크린리더용 이름 */
+  label?: string;
+  disabled?: boolean;
+  /** 입력 가능한 최대 글자 수 */
+  maxLength?: number;
 }

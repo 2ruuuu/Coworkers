@@ -4,8 +4,8 @@ import path from 'node:path';
 const TEST_IMAGE_PATH = path.join(process.cwd(), 'src/assets/images/sample.png');
 
 const getTestCredentials = () => {
-  const email = process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD;
+  const email = process.env.E2E_EMAIL;
+  const password = process.env.E2E_PASSWORD;
 
   if (!email || !password) {
     return null;
@@ -18,7 +18,7 @@ test('로그인 사용자가 게시글 작성, 좋아요, 댓글 등록을 할 �
   const credentials = getTestCredentials();
 
   if (!credentials) {
-    test.skip(true, 'E2E_TEST_EMAIL, E2E_TEST_PASSWORD 환경 변수가 필요합니다.');
+    test.skip(true, 'E2E_EMAIL, E2E_PASSWORD 환경 변수가 필요합니다.');
     return;
   }
 
@@ -40,7 +40,7 @@ test('로그인 사용자가 게시글 작성, 좋아요, 댓글 등록을 할 �
   });
 
   await test.step('글쓰기 버튼을 클릭한다', async () => {
-    await page.getByRole('button', { name: '글쓰기' }).click();
+    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     await expect(page).toHaveURL(/\/articles\/write/);
     await expect(page.getByRole('heading', { name: '게시글 쓰기' })).toBeVisible();
   });

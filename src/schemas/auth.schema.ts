@@ -42,13 +42,6 @@ export const signupSchema = z
 
 export type SignupFormValues = z.infer<typeof signupSchema>;
 
-export const profileUpdateSchema = z.object({
-  nickname: nicknameSchema,
-  image: z.string().trim(),
-});
-
-export type ProfileUpdateFormValues = z.infer<typeof profileUpdateSchema>;
-
 export const passwordChangeSchema = z
   .object({
     password: passwordSchema,
@@ -64,7 +57,10 @@ export type PasswordChangeFormValues = z.infer<typeof passwordChangeSchema>;
 export const accountSettingsSchema = z
   .object({
     nickname: nicknameSchema,
+    /** 화면에 보여줄 이미지 URL (선택한 파일의 미리보기 blob URL 포함) */
     image: z.string().trim(),
+    /** 새로 선택한 프로필 이미지 파일. 저장할 때 업로드한다. */
+    imageFile: z.instanceof(File).nullable(),
     password: z.string(),
     passwordConfirmation: z.string(),
   })

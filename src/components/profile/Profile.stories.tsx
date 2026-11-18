@@ -27,8 +27,9 @@ const meta: Meta<typeof Profile> = {
 export default meta;
 type Story = StoryObj<typeof Profile>;
 
+// 외부 네트워크 없이 보이도록 data URL을 사용한다.
 const MOCK_IMAGE =
-  'https://crowdticket0.s3.ap-northeast-1.amazonaws.com/real/files/user/437745/1700398803264_thumb_img.jpg';
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="%235189fa"/></svg>';
 
 export const Default: Story = {
   args: {

@@ -1,22 +1,24 @@
 import { render, screen } from '@testing-library/react';
+import type * as ReactHookFormModule from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
 import AddTaskModal from './AddTaskModal';
+
+type ReactHookForm = typeof ReactHookFormModule;
 
 vi.mock('@/components/modal/Modal', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock('@/queries/task/queries', () => ({
-  useCreateTask: () => ({
-    mutateAsync: vi.fn(),
+  useCreateTaskMutation: () => ({
+    mutate: vi.fn(),
     isPending: false,
   }),
 }));
 
 vi.mock('./TaskForm', async () => {
-  const { useFormContext } =
-    await vi.importActual<typeof import('react-hook-form')>('react-hook-form');
+  const { useFormContext } = await vi.importActual<ReactHookForm>('react-hook-form');
   const MockTaskForm = () => {
     const { watch } = useFormContext();
     const selectedDate = watch('date') as Date;

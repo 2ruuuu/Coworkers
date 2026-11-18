@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Profile } from '@/apis/user/type';
 import { type AccountSettingsFormValues, accountSettingsSchema } from '@/schemas/auth.schema';
@@ -13,7 +13,7 @@ import ProfileUpdateForm from './ProfileUpdateForm';
 import SettingSaveBar from './SettingSaveBar';
 
 type AccountSettingFormProps = {
-  initialProfile: Profile | null;
+  initialProfile: Profile;
 };
 
 const AccountSettingForm = ({ initialProfile }: AccountSettingFormProps) => {
@@ -21,57 +21,31 @@ const AccountSettingForm = ({ initialProfile }: AccountSettingFormProps) => {
     resolver: zodResolver(accountSettingsSchema),
     mode: 'onChange',
     defaultValues: {
-      nickname: initialProfile?.nickname ?? '',
-      image: initialProfile?.image ?? '',
+      nickname: initialProfile.nickname,
+      image: initialProfile.image ?? '',
+      imageFile: null,
       password: '',
       passwordConfirmation: '',
     },
   });
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { dirtyFields },
-  } = form;
-
-  const password = useWatch({ control, name: 'password' });
-  const passwordConfirmation = useWatch({ control, name: 'passwordConfirmation' });
-
-  const isNicknameChanged = Boolean(dirtyFields.nickname);
-  const isImageChanged = Boolean(dirtyFields.image);
-  const isProfileChanged = isNicknameChanged || isImageChanged;
-  const hasPasswordValue = Boolean(password || passwordConfirmation);
-
-  const { handleSave, isSaving, setSelectedImageFile } = useAccountSettingsSave({
-    isProfileChanged,
-    isNicknameChanged,
-    isImageChanged,
-    hasPasswordValue,
-    handleSubmit,
-    reset,
-  });
-
-  const isSaveBarVisible = isProfileChanged || hasPasswordValue;
+  const { handleSave, isSaving, hasChanges } = useAccountSettingsSave(form);
 
   return (
     <FormProvider {...form}>
       <section className="bg-background-primary w-full max-w-[780px] rounded-2xl p-8 md:p-12">
-        <h1 className="text-medium font-semibold">계정 설정</h1>
-        <ProfileUpdateForm
-          email={initialProfile?.email ?? ''}
-          onImageFileSelect={setSelectedImageFile}
-        />
+        <h1 className="text-xl font-semibold">계정 설정</h1>
+        <ProfileUpdateForm email={initialProfile.email} />
         <PasswordChangeForm />
         <DeleteAccountSection />
       </section>
 
-      {isSaveBarVisible && (
+      {hasChanges && (
         <div className="w-full max-w-[780px]">
           <SettingSaveBar
             description="변경사항이 있습니다."
             buttonText={isSaving ? '저장 중' : '저장하기'}
-            disabled={!isSaveBarVisible || isSaving}
+            disabled={isSaving}
             onSave={handleSave}
           />
         </div>

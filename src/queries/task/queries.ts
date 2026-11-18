@@ -1,147 +1,86 @@
-import {
-  type MutationOptions,
-  type QueryClient,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type QueryClient, queryOptions, useQueryClient } from '@tanstack/react-query';
 
-import {
-  CreateRecurringTaskParams,
-  ResponseTaskRecurring,
-  UpdateRecurringTaskParams,
-} from '@/apis/recurring/type';
-import { Task, TaskDetailPathParams, UpdateTaskRequest } from '@/apis/task/type';
 import {
   createTaskAction,
   deleteTaskAction,
-  getTaskAction,
-  getTasksAction,
-  toggleTaskAction,
   updateRecurringTaskAction,
   updateTaskAction,
-} from '@/app/(protected)/[teamId]/tasklist/_action/task';
-import { teamKeys } from '@/queries/teams/queryKeys';
+} from '@/actions/task.action';
+import { ENDPOINTS } from '@/apis/endpoints';
+import type { Task, TaskDetailPathParams, TaskListPathParams } from '@/apis/task/type';
+import { bffGet } from '@/lib/bffFetcher';
+import { queryKeys } from '@/queries/queryKeys';
+import { useActionMutation } from '@/queries/useActionMutation';
 
-import { groupKeys } from '../group/queryKey';
-import { TaskKeyParams, taskKeys } from './queryKeys';
+export const taskQueries = {
+  list: ({ groupId, taskListId, date }: TaskListPathParams & { date: string }) =>
+    queryOptions({
+      queryKey: queryKeys.task.list(groupId, taskListId, date),
+      queryFn: () => bffGet<Task[]>(ENDPOINTS.task.list(groupId, taskListId, date)),
+    }),
+  detail: ({ groupId, taskListId, taskId }: TaskDetailPathParams) =>
+    queryOptions({
+      queryKey: queryKeys.task.detail(taskId),
+      queryFn: () => bffGet<Task>(ENDPOINTS.task.detail(groupId, taskListId, taskId)),
+    }),
+};
 
-type TaskListQueryParams = Pick<TaskKeyParams, 'groupId' | 'taskListId'>;
-
-const invalidateTaskListAndTeamQueries = (
+/**
+ * 할 일이 바뀌면 목록의 할 일, 상세, 그룹 상세, 팀 페이지를 갱신한다.
+ *
+ * 할 일 목록을 먼저 다시 받은 뒤 나머지를 갱신한다.
+ * 백엔드는 반복 일정의 그날 할 일을 조회 시점에 만들어 두는데, 할 일 목록과 그룹 상세를
+ * 동시에 조회하면 같은 할 일이 두 개 생기는 경쟁 상태가 있다. 그러면 목록이 수정하지 않은
+ * 쪽을 보여 줘 "수정이 반영되지 않는" 것처럼 보이므로 두 조회가 겹치지 않게 한다.
+ */
+export const invalidateTaskQueries = async (
   queryClient: QueryClient,
-  { groupId, taskListId }: TaskListQueryParams,
+  { groupId, taskListId, taskId }: TaskListPathParams & { taskId?: number },
 ) => {
-  return Promise.all([
-    queryClient.invalidateQueries({
-      queryKey: taskKeys.taskList({
-        groupId,
-        taskListId,
-      }),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: teamKeys.group({ groupId }),
-    }),
-    queryClient.invalidateQueries({
-      queryKey: groupKeys.detail({ groupId }),
-    }),
+  await queryClient.invalidateQueries({ queryKey: queryKeys.task.listOf(groupId, taskListId) });
+
+  await Promise.all([
+    taskId !== undefined
+      ? queryClient.invalidateQueries({ queryKey: queryKeys.task.detail(taskId) })
+      : undefined,
+    queryClient.invalidateQueries({ queryKey: queryKeys.group.detail(groupId) }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.teamPage.group(groupId) }),
   ]);
 };
 
-export const useGetTasks = ({ groupId, taskListId, date }: Omit<TaskKeyParams, 'taskId'>) => {
-  return useQuery({
-    queryKey: taskKeys.date({ groupId, taskListId, date }),
-    queryFn: async () => getTasksAction({ groupId, taskListId, date }),
-  });
-};
-
-export const useGetTask = ({ groupId, taskListId, taskId }: Omit<TaskKeyParams, 'date'>) => {
-  return useQuery({
-    queryKey: taskKeys.detail({ groupId, taskListId, taskId }),
-    queryFn: async () => getTaskAction({ groupId, taskListId, taskId }),
-  });
-};
-
-export const useCreateTask = (
-  mutationOptions?: MutationOptions<ResponseTaskRecurring, Error, CreateRecurringTaskParams>,
-) => {
+export const useCreateTaskMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ResponseTaskRecurring, Error, CreateRecurringTaskParams>({
-    ...mutationOptions,
-    mutationFn: createTaskAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListAndTeamQueries(queryClient, variables);
-    },
+  return useActionMutation(createTaskAction, {
+    onSuccess: (_data, variables) => invalidateTaskQueries(queryClient, variables),
+    meta: { errorMessage: '할 일을 만들지 못했습니다.' },
   });
 };
 
-export const useUpdateRecurringTask = (
-  mutationOptions?: MutationOptions<ResponseTaskRecurring, Error, UpdateRecurringTaskParams>,
-) => {
+export const useUpdateRecurringTaskMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ResponseTaskRecurring, Error, UpdateRecurringTaskParams>({
-    ...mutationOptions,
-    mutationFn: updateRecurringTaskAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListAndTeamQueries(queryClient, variables);
-    },
+  return useActionMutation(updateRecurringTaskAction, {
+    onSuccess: (_data, variables) => invalidateTaskQueries(queryClient, variables),
+    meta: { errorMessage: '반복 설정을 수정하지 못했습니다.' },
   });
 };
 
-export const useUpdateTask = (
-  mutationOptions?: MutationOptions<Task, Error, UpdateTaskRequest>,
-) => {
+/** 이름/설명/완료 여부 수정에 모두 사용한다. */
+export const useUpdateTaskMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Task, Error, UpdateTaskRequest>({
-    ...mutationOptions,
-    mutationFn: updateTaskAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: taskKeys.detail({
-            groupId: variables.groupId,
-            taskListId: variables.taskListId,
-            taskId: variables.taskId,
-          }),
-        }),
-        invalidateTaskListAndTeamQueries(queryClient, variables),
-      ]);
-    },
+  return useActionMutation(updateTaskAction, {
+    onSuccess: (_data, variables) => invalidateTaskQueries(queryClient, variables),
+    meta: { errorMessage: '할 일을 수정하지 못했습니다.' },
   });
 };
 
-export const useToggleTask = (
-  mutationOptions?: MutationOptions<Task, Error, UpdateTaskRequest>,
-) => {
+export const useDeleteTaskMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Task, Error, UpdateTaskRequest>({
-    ...mutationOptions,
-    mutationFn: toggleTaskAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListAndTeamQueries(queryClient, variables);
-    },
-  });
-};
-
-export const useDeleteTask = (
-  mutationOptions?: MutationOptions<ResponseTaskRecurring, Error, TaskDetailPathParams>,
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<ResponseTaskRecurring, Error, TaskDetailPathParams>({
-    ...mutationOptions,
-    mutationFn: deleteTaskAction,
-    onSuccess: (data, variables, onMutateResult, context) => {
-      mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      return invalidateTaskListAndTeamQueries(queryClient, variables);
-    },
+  return useActionMutation(deleteTaskAction, {
+    onSuccess: (_data, variables) => invalidateTaskQueries(queryClient, variables),
+    meta: { errorMessage: '할 일을 삭제하지 못했습니다.' },
   });
 };

@@ -1,12 +1,18 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-import { TaskList } from '@/apis/group/type';
-import { groupKeys } from '@/queries/group/queryKey';
-import { formatISODate } from '@/utils/date';
+import { getGroupServer } from '@/apis/group/server';
+import { getTasksServer } from '@/apis/task/server';
+import { ROUTES } from '@/constants/routes';
+import { withQuery } from '@/lib/apiUrl';
+import { handleServerApiError } from '@/lib/auth/session';
+import { ApiError } from '@/lib/error';
+import { getQueryClient } from '@/lib/queryClient';
+import { queryKeys } from '@/queries/queryKeys';
+import { isoDateSchema, parsePositiveId } from '@/schemas/common.schema';
+import { getServiceDate } from '@/utils/date';
 
-import { getGroupAction } from './_action/group';
 import TaskListPageClient from './_components/TaskListPageClient';
 
 interface TaskListPageProps {
@@ -14,44 +20,46 @@ interface TaskListPageProps {
   searchParams: Promise<{ taskListId?: string; date?: string }>;
 }
 
-const TaskListPage = async ({ params, searchParams }: TaskListPageProps) => {
-  const { teamId } = await params;
-  const { taskListId, date } = await searchParams;
-
-  // 예외 처리
-  const groupId = Number(teamId);
-  if (Number.isNaN(groupId)) return notFound();
-
-  const queryClient = new QueryClient();
-
-  let groupData;
+const getGroupOrNotFound = async (groupId: number) => {
   try {
-    groupData = await queryClient.fetchQuery({
-      queryKey: groupKeys.detail({ groupId }),
-      queryFn: () => getGroupAction({ groupId }),
-    });
-  } catch {
-    return notFound();
+    return await getGroupServer(groupId);
+  } catch (error) {
+    if (error instanceof ApiError && [403, 404].includes(error.status)) {
+      notFound();
+    }
+    return handleServerApiError(error);
+  }
+};
+
+const TaskListPage = async ({ params, searchParams }: TaskListPageProps) => {
+  const groupId = parsePositiveId((await params).teamId);
+  const { taskListId: taskListIdParam, date: dateParam } = await searchParams;
+
+  if (!groupId) {
+    notFound();
   }
 
-  const hasTaskLists = groupData && groupData.taskLists.length > 0;
-  const isValidTaskListId = taskListId
-    ? groupData.taskLists.some((list: TaskList) => list.id.toString() === taskListId)
-    : false;
+  const group = await getGroupOrNotFound(groupId);
+  const requestedTaskListId = parsePositiveId(taskListIdParam);
 
-  if (taskListId && !isValidTaskListId) return notFound();
+  if (taskListIdParam && !group.taskLists.some((list) => list.id === requestedTaskListId)) {
+    notFound();
+  }
 
-  const targetDate = date || formatISODate(new Date());
-  const targetTaskListId =
-    taskListId || (hasTaskLists ? groupData.taskLists[0].id.toString() : undefined);
+  // 날짜/목록이 비어 있거나 형식이 틀리면 기본값(오늘, 첫 번째 목록)으로 URL을 정리한다.
+  const date = isoDateSchema.safeParse(dateParam).success ? dateParam! : getServiceDate();
+  const taskListId = requestedTaskListId ?? group.taskLists[0]?.id;
 
-  if (date !== targetDate || taskListId !== targetTaskListId) {
-    const params = new URLSearchParams();
-    params.set('date', targetDate);
-    if (targetTaskListId) {
-      params.set('taskListId', targetTaskListId);
-    }
-    redirect(`?${params.toString()}`);
+  if (dateParam !== date || (taskListId && requestedTaskListId !== taskListId)) {
+    redirect(withQuery(ROUTES.taskList(groupId), { date, taskListId }));
+  }
+
+  const queryClient = getQueryClient();
+  queryClient.setQueryData(queryKeys.group.detail(groupId), group);
+
+  if (taskListId) {
+    const tasks = await getTasksServer({ groupId, taskListId, date }).catch(handleServerApiError);
+    queryClient.setQueryData(queryKeys.task.list(groupId, taskListId, date), tasks);
   }
 
   return (

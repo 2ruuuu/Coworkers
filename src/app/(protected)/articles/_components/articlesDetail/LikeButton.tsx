@@ -2,14 +2,9 @@
 
 import { useState } from 'react';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import {
-  createArticleLikeAction,
-  deleteArticleLikeAction,
-} from '@/app/(protected)/articles/_actions/like.action';
-import HeartEmptyIcon from '@/assets/icons/heart_empty.svg';
-import HeartFillIcon from '@/assets/icons/heart_fill.svg';
+import HeartEmptyIcon from '@/assets/icons/heart_empty.svg?react';
+import HeartFillIcon from '@/assets/icons/heart_fill.svg?react';
+import { useToggleArticleLikeMutation } from '@/queries/article/queries';
 import { cn } from '@/utils/cn';
 
 interface LikeButtonProps {
@@ -18,45 +13,22 @@ interface LikeButtonProps {
   initialLikeCount: number;
 }
 
+const formatLikeCount = (count: number) => (count > 999 ? '999+' : String(count));
+
+/** 누르는 즉시 화면에 반영하고(낙관적 업데이트), 실패하면 되돌린다. */
 const LikeButton = ({ articleId, initialIsLiked, initialLikeCount }: LikeButtonProps) => {
-  const [isLiked, setIsLiked] = useState(initialIsLiked);
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const queryClient = useQueryClient();
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (liked: boolean) => {
-      return liked ? deleteArticleLikeAction(articleId) : createArticleLikeAction(articleId);
-    },
-    onMutate: (liked) => {
-      const previousState = { isLiked, likeCount };
-
-      if (liked) {
-        setIsLiked(false);
-        setLikeCount((prev) => Math.max(0, prev - 1));
-      } else {
-        setIsLiked(true);
-        setLikeCount((prev) => prev + 1);
-      }
-
-      return previousState;
-    },
-    onError: (error, _liked, context) => {
-      if (context) {
-        setIsLiked(context.isLiked);
-        setLikeCount(context.likeCount);
-      }
-      console.error('좋아요 처리 실패', error);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['articles'] });
-      queryClient.invalidateQueries({ queryKey: ['best-articles'] });
-    },
-  });
+  const [like, setLike] = useState({ isLiked: initialIsLiked, count: initialLikeCount });
+  const { mutate, isPending } = useToggleArticleLikeMutation();
 
   const handleClick = () => {
     if (isPending) return;
 
-    mutate(isLiked);
+    const previous = like;
+    setLike({
+      isLiked: !previous.isLiked,
+      count: Math.max(0, previous.count + (previous.isLiked ? -1 : 1)),
+    });
+    mutate({ articleId, isLiked: previous.isLiked }, { onError: () => setLike(previous) });
   };
 
   return (
@@ -64,20 +36,21 @@ const LikeButton = ({ articleId, initialIsLiked, initialLikeCount }: LikeButtonP
       <button
         type="button"
         disabled={isPending}
-        aria-label="좋아요"
+        aria-pressed={like.isLiked}
+        aria-label={`좋아요 ${like.count}개`}
         className={cn(
-          'text-md flex flex-row items-center gap-1 font-normal',
-          isLiked ? 'text-brand-primary' : 'text-text-disabled',
+          'text-md focus-visible:ring-brand-primary flex flex-row items-center gap-1 rounded-md font-normal outline-none focus-visible:ring-2',
+          like.isLiked ? 'text-brand-primary' : 'text-text-disabled',
           isPending && 'cursor-not-allowed opacity-50',
         )}
         onClick={handleClick}
       >
-        {isLiked ? (
+        {like.isLiked ? (
           <HeartFillIcon className="h-6 w-4" aria-hidden="true" />
         ) : (
           <HeartEmptyIcon className="h-6 w-4" aria-hidden="true" />
         )}
-        {(likeCount || 0) > 999 ? '999+' : likeCount || 0}
+        <span aria-hidden="true">{formatLikeCount(like.count)}</span>
       </button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import TaskListTitle from './TaskListTitle';
@@ -41,7 +41,7 @@ export const PrevWeekButtonCheck: Story = {
     const canvas = within(canvasElement);
 
     // Act
-    await userEvent.click(canvas.getByRole('button', { name: '이전' }));
+    await userEvent.click(canvas.getByRole('button', { name: '이전 주' }));
 
     // Assert
     expect(args.onPrevWeek).toHaveBeenCalled();
@@ -57,7 +57,7 @@ export const NextWeekButtonCheck: Story = {
     const canvas = within(canvasElement);
 
     // Act
-    await userEvent.click(canvas.getByRole('button', { name: '다음' }));
+    await userEvent.click(canvas.getByRole('button', { name: '다음 주' }));
 
     // Assert
     expect(args.onNextWeek).toHaveBeenCalled();
