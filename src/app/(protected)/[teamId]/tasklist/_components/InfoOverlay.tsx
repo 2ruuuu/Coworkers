@@ -1,7 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
+import { useQuery } from '@tanstack/react-query';
+
+import type { Task } from '@/apis/task/type';
 import CalendarIcon from '@/assets/icons/calendar.svg?react';
 import CheckIcon from '@/assets/icons/check_blue.svg?react';
 import KebabIcon from '@/assets/icons/kebab.svg?react';
@@ -10,20 +13,14 @@ import XIcon from '@/assets/icons/x.svg?react';
 import Button from '@/components/button/Button';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Profile from '@/components/profile/Profile';
-import Reply from '@/components/reply/Reply';
-import ReplyEdit from '@/components/reply/ReplyEdit';
-import { FREQUENCY_TEXT, OPTIONS } from '@/constants/listItem';
+import { EDIT_DELETE_OPTIONS, FREQUENCY_TEXT } from '@/constants/listItem';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
-import {
-  useDeleteTaskComment,
-  useGetTaskComments,
-  useUpdateTaskComment,
-} from '@/queries/task/comment/queries';
-import { useGetTask, useToggleTask } from '@/queries/task/queries';
+import { taskQueries, useUpdateTaskMutation } from '@/queries/task/queries';
 import { cn } from '@/utils/cn';
 import { formatYearMonthDay } from '@/utils/date';
+import { isTaskDone } from '@/utils/task';
 
-import CommentForm from './CommentForm';
+import TaskComments from './TaskComments';
 
 interface InfoOverlayProps {
   groupId: number;
@@ -31,80 +28,81 @@ interface InfoOverlayProps {
   taskId: number;
   isOpen: boolean;
   onClose: () => void;
+  onEdit: (task: Task) => void;
+  onDelete: (task: Task) => void;
 }
 
-const InfoOverlay = ({ taskId, isOpen, onClose, taskListId, groupId }: InfoOverlayProps) => {
-  const { data: task } = useGetTask({ taskId, taskListId, groupId });
-  const { mutate: toggleTask } = useToggleTask();
+/** 할 일 상세 패널. 오른쪽에서 열리는 대화상자이며 Escape나 바깥 클릭으로 닫힌다. */
+const InfoOverlay = ({
+  groupId,
+  taskListId,
+  taskId,
+  isOpen,
+  onClose,
+  onEdit,
+  onDelete,
+}: InfoOverlayProps) => {
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const { data: task } = useQuery(taskQueries.detail({ groupId, taskListId, taskId }));
+  const { mutate: updateTask, isPending: isToggling } = useUpdateTaskMutation();
 
-  const { data: comments, isPending } = useGetTaskComments({ taskId });
-  const { mutate: editComment } = useUpdateTaskComment();
-  const [updateComment, setUpdateComment] = useState('');
+  useOutsideClick(panelRef, onClose);
 
-  const { mutate: deleteComment } = useDeleteTaskComment();
+  useEffect(() => {
+    if (!isOpen) return;
 
-  const overlayRef = useRef<HTMLDivElement>(null);
-  useOutsideClick(overlayRef, onClose);
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
 
-  const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null);
-  const [openedCommentId, setOpenedCommentId] = useState<number | null>(null);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
-  useOutsideClick(dropdownRef, () => {
-    setOpenedCommentId(null);
-  });
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
 
-  if (!task) return null;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isOpen, onClose]);
 
-  const isDone = Boolean(task.doneAt);
+  if (!isOpen || !task) return null;
 
-  const handleMenuClick = (id: number) => {
-    setOpenedCommentId(id);
-  };
+  const isDone = isTaskDone(task);
+  const startDate = task.startDate ? new Date(task.startDate) : null;
 
-  const handleMenuItemSelect = (value: string, commentId: number, content: string) => {
-    if (value === 'DELETE') {
-      deleteComment({ taskId: task!.id, commentId });
-    } else if (value === 'EDIT') {
-      setSelectedCommentId(commentId);
-      setUpdateComment(content);
-    }
-    setOpenedCommentId(null);
-  };
-
-  const handleUpdateComment = (commentId: number) => {
-    editComment(
-      { taskId, content: updateComment, commentId },
-      {
-        onSuccess: () => setSelectedCommentId(null),
-      },
-    );
-  };
-
-  const handleToggle = async () => {
-    toggleTask({ groupId, taskId, done: !isDone, taskListId });
-  };
-
-  if (!isOpen || isPending || !task) return null;
   return (
     <div
-      className="fixed inset-0 top-16 z-200 overflow-y-auto bg-white px-4 py-3 shadow-xl md:top-0 md:left-1/2 md:px-7 md:py-10 xl:px-10"
-      ref={overlayRef}
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className="bg-background-primary fixed inset-0 top-16 z-200 overflow-y-auto px-4 py-3 shadow-xl md:top-0 md:left-1/2 md:px-7 md:py-10 xl:px-10"
     >
       <div className="mb-10 md:mb-14 xl:mb-17">
-        <button className="mb-4 md:mb-17.5" onClick={onClose}>
-          <XIcon />
+        <button
+          ref={closeButtonRef}
+          type="button"
+          aria-label="할 일 상세 닫기"
+          className="focus-visible:ring-brand-primary mb-4 rounded outline-none focus-visible:ring-2 md:mb-17.5"
+          onClick={onClose}
+        >
+          <XIcon aria-hidden="true" />
         </button>
 
         <div className="text-text-primary flex items-center justify-between pb-4">
           <div className="flex gap-4">
-            <span
+            <h2
+              id={titleId}
               className={cn(
                 'text-xl font-semibold md:text-2xl',
                 isDone && 'text-text-default line-through',
               )}
             >
               {task.name}
-            </span>
+            </h2>
             {isDone && (
               <span className="bg-brand-secondary text-brand-primary rounded-lg px-2.5 py-1.5 text-lg font-semibold">
                 완료
@@ -112,50 +110,52 @@ const InfoOverlay = ({ taskId, isOpen, onClose, taskListId, groupId }: InfoOverl
             )}
           </div>
 
-          {/* TODO: 해당 버튼에 기능 추가 */}
-          <button className="" onClick={() => {}}>
-            <KebabIcon />
-          </button>
+          <Dropdown
+            options={EDIT_DELETE_OPTIONS}
+            onSelect={(value) => (value === 'EDIT' ? onEdit(task) : onDelete(task))}
+            trigger={<KebabIcon aria-hidden="true" />}
+            triggerLabel="할 일 메뉴"
+          />
         </div>
 
         <div className="flex items-center gap-2 pb-4">
-          <Profile src={task.writer?.image} alt={task.writer?.nickname ?? '알 수 없음'} />
+          <Profile
+            src={task.writer?.image}
+            alt={`${task.writer?.nickname ?? '알 수 없음'} 프로필`}
+          />
           <span className="text-md font-medium">{task.writer?.nickname ?? '알 수 없음'}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-2">
+          <dl className="flex flex-col gap-2 text-xs">
             <div className="flex gap-3">
-              <div className="flex w-[82px] items-center gap-1.5">
-                <CalendarIcon />
-                <span className="text-text-default text-xs font-normal">시작 날짜</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-text-primary text-xs font-normal">
-                  {task.startDate
-                    ? formatYearMonthDay(new Date(task.startDate))
-                    : formatYearMonthDay(new Date())}
-                </span>
-              </div>
+              <dt className="text-text-default flex w-[82px] items-center gap-1.5">
+                <CalendarIcon aria-hidden="true" />
+                시작 날짜
+              </dt>
+              <dd className="text-text-primary flex items-center">
+                {startDate ? formatYearMonthDay(startDate) : '-'}
+              </dd>
             </div>
             <div className="flex gap-3">
-              <div className="flex w-[82px] items-center gap-1.5">
-                <RepeatIcon />
-                <span className="text-text-default text-xs font-normal">반복 설정</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-text-primary text-xs font-normal">
-                  {FREQUENCY_TEXT[task.frequency]}
-                </span>
-              </div>
+              <dt className="text-text-default flex w-[82px] items-center gap-1.5">
+                <RepeatIcon aria-hidden="true" />
+                반복 설정
+              </dt>
+              <dd className="text-text-primary flex items-center">
+                {FREQUENCY_TEXT[task.frequency]}
+              </dd>
             </div>
-          </div>
+          </dl>
 
           <div className="fixed right-4 bottom-6 z-10 md:static md:right-0 md:bottom-0">
             <Button
-              icon={<CheckIcon className={isDone ? '' : '[&_path]:stroke-white'} />}
+              icon={
+                <CheckIcon className={isDone ? '' : '[&_path]:stroke-white'} aria-hidden="true" />
+              }
               variant={isDone ? 'secondary-whiteFilled' : 'secondary-filled'}
-              onClick={handleToggle}
+              disabled={isToggling}
+              onClick={() => updateTask({ groupId, taskListId, taskId, done: !isDone })}
             >
               {isDone ? '완료 취소하기' : '완료하기'}
             </Button>
@@ -164,59 +164,12 @@ const InfoOverlay = ({ taskId, isOpen, onClose, taskListId, groupId }: InfoOverl
 
         <div className="border-border-primary my-6 border-t" />
 
-        <span className="text-md text-text-primary font-normal">{task.description}</span>
+        <p className="text-md text-text-primary font-normal whitespace-pre-line">
+          {task.description}
+        </p>
       </div>
 
-      <div>
-        <div className="mb-4 flex gap-1">
-          <span className="text-text-primary text-lg font-semibold">댓글</span>
-          <span className="text-brand-primary text-lg font-semibold">{comments?.length ?? 0}</span>
-        </div>
-
-        {/* Comment Input */}
-        <CommentForm writer={task.writer} taskId={task.id} />
-
-        {/* Comment List */}
-        <div className="divide-border-primary divide-y divide-solid">
-          {comments &&
-            comments.map((comment) => (
-              <div
-                className="relative"
-                key={comment.id}
-                ref={openedCommentId === comment.id ? dropdownRef : null}
-              >
-                {/* TODO: User 감지하여 관리자 및 작성자 본인 댓글일 때만 수정, 삭제 버튼 표시 */}
-                {selectedCommentId === comment.id ? (
-                  <ReplyEdit
-                    author={comment.user.nickname}
-                    avatar={<Profile src={comment.user.image} alt={comment.user.nickname} />}
-                    value={updateComment}
-                    onCancel={() => setSelectedCommentId(null)}
-                    onChange={setUpdateComment}
-                    onSubmit={() => handleUpdateComment(comment.id)}
-                  />
-                ) : (
-                  <Reply
-                    author={comment.user.nickname}
-                    avatar={<Profile src={comment.user.image} alt={comment.user.nickname} />}
-                    date={formatYearMonthDay(new Date(comment.createdAt))}
-                    onMenuClick={() => handleMenuClick(comment.id)}
-                  >
-                    {comment.content}
-                  </Reply>
-                )}
-                {openedCommentId === comment.id && (
-                  <div className="absolute top-10 right-30">
-                    <Dropdown
-                      options={OPTIONS}
-                      onSelect={(value) => handleMenuItemSelect(value, comment.id, comment.content)}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-        </div>
-      </div>
+      <TaskComments taskId={task.id} />
     </div>
   );
 };

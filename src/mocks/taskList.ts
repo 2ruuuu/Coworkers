@@ -1,5 +1,5 @@
-import { Comment } from '@/apis/comment/type';
-import { TaskList } from '@/apis/group/type';
+import type { Comment } from '@/apis/comment/type';
+import type { TaskList } from '@/apis/taskList/type';
 
 export const MOCK_TASKLISTS: TaskList[] = [
   {

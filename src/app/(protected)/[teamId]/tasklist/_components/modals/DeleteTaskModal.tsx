@@ -2,10 +2,9 @@
 
 import { toast } from 'react-hot-toast';
 
-import { Task } from '@/apis/task/type';
-import Modal from '@/components/modal/Modal';
-import { getErrorMessage } from '@/lib/error';
-import { useDeleteTask } from '@/queries/task/queries';
+import type { Task } from '@/apis/task/type';
+import ConfirmModal from '@/components/modal/ConfirmModal';
+import { useDeleteTaskMutation } from '@/queries/task/queries';
 
 interface DeleteTaskModalProps {
   isOpen: boolean;
@@ -16,34 +15,20 @@ interface DeleteTaskModalProps {
 }
 
 const DeleteTaskModal = ({ isOpen, onClose, task, groupId, taskListId }: DeleteTaskModalProps) => {
-  const { mutateAsync: deleteTask, isPending } = useDeleteTask();
-
-  const handleDeleteTask = async () => {
-    try {
-      await deleteTask({ groupId, taskListId, taskId: task.id });
-
-      toast.success('할 일을 삭제했습니다.');
-      onClose();
-    } catch (error) {
-      toast.error(getErrorMessage(error, '할 일을 삭제하지 못했습니다.'));
-    }
-  };
+  const { mutateAsync: deleteTask } = useDeleteTaskMutation();
 
   return (
-    <Modal
+    <ConfirmModal
       isOpen={isOpen}
       onClose={onClose}
       title={`'${task.name}' 할 일을 정말 삭제하시겠어요?`}
       description="삭제 후에는 되돌릴 수 없습니다."
-      variant="danger"
-      primaryAction={{
-        label: '삭제하기',
-        onClick: handleDeleteTask,
-        disabled: isPending,
-      }}
-      secondaryAction={{
-        label: '닫기',
-        onClick: onClose,
+      confirmLabel="삭제하기"
+      loadingLabel="삭제 중"
+      cancelLabel="닫기"
+      onConfirm={async () => {
+        await deleteTask({ groupId, taskListId, taskId: task.id });
+        toast.success('할 일을 삭제했습니다.');
       }}
     />
   );

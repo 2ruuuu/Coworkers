@@ -1,4 +1,4 @@
-import { TimeState } from '@/types/time';
+import { type TimeState } from '@/types/time';
 
 export const createStartDate = (date: Date, time: TimeState): string => {
   const startDate = new Date(date);

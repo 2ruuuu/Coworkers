@@ -1,16 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
-
 import { overlay } from 'overlay-kit';
 
 import SettingIcon from '@/assets/icons/setting.svg?react';
 import Dropdown from '@/components/dropdown/Dropdown';
-import { OPTIONS } from '@/constants/listItem';
-import { useOutsideClick } from '@/hooks/useOutsideClick';
-
-import DeleteTaskListModal from './modals/DeleteTaskListModal';
-import EditTaskListModal from './modals/EditTaskListModal';
+import DeleteTaskListModal from '@/components/taskList/DeleteTaskListModal';
+import TaskListNameModal from '@/components/taskList/TaskListNameModal';
+import { EDIT_DELETE_OPTIONS, type EditDeleteValue } from '@/constants/listItem';
+import { useCustomSearchParams } from '@/hooks/useCustomSearchParams';
 
 interface TaskListHeaderProps {
   name: string;
@@ -19,61 +16,45 @@ interface TaskListHeaderProps {
 }
 
 const TaskListHeader = ({ name, groupId, taskListId }: TaskListHeaderProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { setSearchParams } = useCustomSearchParams();
 
-  useOutsideClick(dropdownRef, () => setIsOpen(false));
-
-  const handleMenuSelect = (value: string) => {
-    setIsOpen(false);
-
+  const handleMenuSelect = (value: EditDeleteValue) => {
     if (value === 'EDIT') {
       overlay.open(({ isOpen, close }) => (
-        <EditTaskListModal
+        <TaskListNameModal
+          mode="edit"
           isOpen={isOpen}
           onClose={close}
           groupId={groupId}
           taskListId={taskListId}
-          title={name}
+          initialName={name}
         />
       ));
-    } else if (value === 'DELETE') {
-      overlay.open(({ isOpen, close }) => (
-        <DeleteTaskListModal
-          isOpen={isOpen}
-          onClose={close}
-          groupId={groupId}
-          taskListId={taskListId}
-          taskListName={name}
-        />
-      ));
+      return;
     }
+
+    overlay.open(({ isOpen, close }) => (
+      <DeleteTaskListModal
+        isOpen={isOpen}
+        onClose={close}
+        groupId={groupId}
+        taskListId={taskListId}
+        taskListName={name}
+        // 보고 있던 목록이 사라지면 서버 페이지가 첫 번째 목록으로 다시 정리한다.
+        onDeleted={() => setSearchParams({ taskListId: undefined })}
+      />
+    ));
   };
 
   return (
-    <div className="text-text-primary xl:outline-border-primary flex items-center gap-2 rounded-xl bg-transparent text-center text-2xl font-semibold xl:w-full xl:justify-between xl:bg-white xl:px-6 xl:py-4.5 xl:outline">
-      {name}
-
-      <div className="relative flex justify-center" ref={dropdownRef}>
-        <button
-          type="button"
-          aria-label="설정"
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((prev) => !prev)}
-        >
-          <SettingIcon className="size-6" />
-        </button>
-
-        {isOpen && (
-          <div className="absolute top-full right-0 z-20 mt-1 [&>div]:top-0 [&>div]:right-0 [&>div]:left-auto">
-            <Dropdown
-              options={OPTIONS}
-              onSelect={handleMenuSelect}
-              onClose={() => setIsOpen(false)}
-            />
-          </div>
-        )}
-      </div>
+    <div className="text-text-primary xl:outline-border-primary xl:bg-background-primary flex items-center gap-2 rounded-xl bg-transparent text-center text-2xl font-semibold xl:w-full xl:justify-between xl:px-6 xl:py-4.5 xl:outline">
+      <h1>{name}</h1>
+      <Dropdown
+        options={EDIT_DELETE_OPTIONS}
+        onSelect={handleMenuSelect}
+        trigger={<SettingIcon className="size-6" aria-hidden="true" />}
+        triggerLabel={`${name} 목록 설정`}
+      />
     </div>
   );
 };

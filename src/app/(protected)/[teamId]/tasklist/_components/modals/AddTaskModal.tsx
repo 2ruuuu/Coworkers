@@ -6,10 +6,9 @@ import { toast } from 'react-hot-toast';
 
 import Button from '@/components/button/Button';
 import Modal from '@/components/modal/Modal';
-import { getErrorMessage } from '@/lib/error';
-import { useCreateTask } from '@/queries/task/queries';
+import { useCreateTaskMutation } from '@/queries/task/queries';
 
-import { TaskFormValues, taskSchema } from '../../_schemas/task.schema';
+import { type TaskFormValues, taskSchema } from '../../_schemas/task.schema';
 import { createStartDate } from '../../_utils/date';
 import { createRecurringPayload } from '../../_utils/task';
 import TaskForm from './TaskForm';
@@ -35,20 +34,21 @@ const AddTaskModal = ({ isOpen, onClose, groupId, taskListId, initialDate }: Add
     mode: 'onBlur',
   });
 
-  const { mutateAsync: createTask, isPending } = useCreateTask();
+  const { mutate: createTask, isPending } = useCreateTaskMutation();
 
   const handleSubmit = async (formValues: TaskFormValues) => {
     const startDate = createStartDate(formValues.date, formValues.time);
     const payload = createRecurringPayload(formValues, startDate);
 
-    try {
-      await createTask({ groupId, taskListId, body: payload });
-
-      toast.success('할 일을 만들었습니다.');
-      onClose();
-    } catch (error) {
-      toast.error(getErrorMessage(error, '할 일을 만들지 못했습니다.'));
-    }
+    createTask(
+      { groupId, taskListId, body: payload },
+      {
+        onSuccess: () => {
+          toast.success('할 일을 만들었습니다.');
+          onClose();
+        },
+      },
+    );
   };
 
   return (
@@ -64,7 +64,7 @@ const AddTaskModal = ({ isOpen, onClose, groupId, taskListId, initialDate }: Add
         <form className="flex flex-col gap-6" onSubmit={methods.handleSubmit(handleSubmit)}>
           <TaskForm />
 
-          <Button variant="primary-filled" fullWidth disabled={isPending}>
+          <Button type="submit" variant="primary-filled" fullWidth isLoading={isPending}>
             만들기
           </Button>
         </form>
