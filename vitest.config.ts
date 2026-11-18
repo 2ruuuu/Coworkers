@@ -9,11 +9,17 @@ const dirname =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+// 서버(배포 환경)와 같은 조건에서 날짜 로직을 검증하기 위해 시간대를 UTC로 고정한다.
+process.env.TZ = 'UTC';
+
+const alias = {
+  '@': path.join(dirname, 'src'),
+  'server-only': path.join(dirname, 'tests/mocks/server-only.ts'),
+};
+
 export default defineConfig({
+  resolve: { alias },
   test: {
-    alias: {
-      'server-only': path.join(dirname, 'tests/mocks/server-only.ts'),
-    },
     projects: [
       {
         extends: true,
@@ -33,13 +39,8 @@ export default defineConfig({
         },
       },
       {
+        extends: true,
         plugins: [react()],
-        resolve: {
-          alias: {
-            '@': path.join(dirname, 'src'),
-            'server-only': path.join(dirname, 'tests/mocks/server-only.ts'),
-          },
-        },
         test: {
           name: 'unit',
           environment: 'jsdom',
