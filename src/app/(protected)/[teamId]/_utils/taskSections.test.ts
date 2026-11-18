@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TaskList } from '@/apis/group/type';
 import type { Task } from '@/apis/task/type';
+import type { TaskList } from '@/apis/taskList/type';
 
 import { createTaskItemsByStatus } from './taskSections';
 

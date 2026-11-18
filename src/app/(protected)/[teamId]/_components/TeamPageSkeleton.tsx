@@ -14,7 +14,7 @@ const TeamPageSkeleton = () => {
     >
       <span className="sr-only">팀 페이지를 불러오는 중입니다.</span>
 
-      <section className="border-border-primary bg-background-primary xl:rounded-5 min-h-37.75 rounded-xl border p-5 shadow-sm xl:min-h-59.75 xl:p-8">
+      <section className="border-border-primary bg-background-primary min-h-37.75 rounded-xl border p-5 shadow-sm xl:min-h-59.75 xl:rounded-[20px] xl:p-8">
         <div className="flex items-center gap-3">
           <Skeleton className="size-8 rounded-lg xl:size-9" />
           <Skeleton className="h-5 w-32 rounded-md" />

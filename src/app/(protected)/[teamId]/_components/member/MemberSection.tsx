@@ -23,14 +23,14 @@ const MemberSection = ({
 
         <button
           type="button"
-          className="text-brand-primary hover:text-interaction-hover focus-visible:ring-brand-primary rounded-sm text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="text-brand-primary hover:text-interaction-hover focus-visible:ring-brand-primary rounded-sm text-sm font-semibold transition-colors outline-none focus-visible:ring-2"
           onClick={onInviteClick}
         >
           초대하기 +
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {members.map((member) => (
           <MemberItem
             key={member.id}
@@ -39,7 +39,7 @@ const MemberSection = ({
             onRemove={onRemoveMember}
           />
         ))}
-      </div>
+      </ul>
     </section>
   );
 };

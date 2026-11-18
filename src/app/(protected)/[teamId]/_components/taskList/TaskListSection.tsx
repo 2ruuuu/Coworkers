@@ -19,18 +19,18 @@ interface GroupedTaskStatusSection extends TaskStatusSection {
 }
 
 interface TaskListSectionProps {
-  teamId: string;
+  groupId: number;
   taskListsCount: number;
   sections: GroupedTaskStatusSection[];
   onCreateTaskList: () => void;
 }
 
 interface TaskStatusSectionRowProps {
-  teamId: string;
+  groupId: number;
   section: GroupedTaskStatusSection;
 }
 
-const TaskStatusSectionRow = ({ teamId, section }: TaskStatusSectionRowProps) => {
+const TaskStatusSectionRow = ({ groupId, section }: TaskStatusSectionRowProps) => {
   const { scrollRef, canScrollLeft, canScrollRight, isDragging, scrollByDirection, dragHandlers } =
     useHorizontalScroll<HTMLDivElement>();
   const isScrollable = canScrollLeft || canScrollRight;
@@ -40,13 +40,15 @@ const TaskStatusSectionRow = ({ teamId, section }: TaskStatusSectionRowProps) =>
       <div
         className={`${TASK_SECTION_HEADER_STYLE[section.status]} flex h-9.5 items-center justify-between rounded-xl px-5`}
       >
-        <h3 className="text-text-primary text-xs font-semibold">{section.label}</h3>
+        <h3 className="text-text-primary text-xs font-semibold">
+          {section.label} <span className="sr-only">({section.items.length}개)</span>
+        </h3>
 
         {isScrollable && (
           <div className="hidden items-center gap-1 xl:flex">
             <button
               type="button"
-              className="text-icon-primary hover:bg-background-primary hover:text-brand-primary focus-visible:ring-brand-primary disabled:text-text-disabled flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed"
+              className="text-icon-primary hover:bg-background-primary hover:text-brand-primary focus-visible:ring-brand-primary disabled:text-text-disabled flex size-6 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed"
               aria-label={`${section.label} 왼쪽으로 스크롤`}
               disabled={!canScrollLeft}
               onClick={() => scrollByDirection('left')}
@@ -56,7 +58,7 @@ const TaskStatusSectionRow = ({ teamId, section }: TaskStatusSectionRowProps) =>
 
             <button
               type="button"
-              className="text-icon-primary hover:bg-background-primary hover:text-brand-primary focus-visible:ring-brand-primary disabled:text-text-disabled flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed"
+              className="text-icon-primary hover:bg-background-primary hover:text-brand-primary focus-visible:ring-brand-primary disabled:text-text-disabled flex size-6 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed"
               aria-label={`${section.label} 오른쪽으로 스크롤`}
               disabled={!canScrollRight}
               onClick={() => scrollByDirection('right')}
@@ -75,20 +77,20 @@ const TaskStatusSectionRow = ({ teamId, section }: TaskStatusSectionRowProps) =>
         )}
         {...dragHandlers}
       >
-        <div className="grid gap-3 md:grid-cols-1 xl:flex xl:w-max xl:flex-nowrap">
+        <ul className="grid gap-3 md:grid-cols-1 xl:flex xl:w-max xl:flex-nowrap">
           {section.items.map((item) => (
-            <div key={item.id} className="py-1 xl:w-[270px] xl:shrink-0">
-              <TaskListCard item={item} teamId={teamId} />
-            </div>
+            <li key={item.id} className="py-1 xl:w-[270px] xl:shrink-0">
+              <TaskListCard item={item} groupId={groupId} />
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
 };
 
 const TaskListSection = ({
-  teamId,
+  groupId,
   taskListsCount,
   sections,
   onCreateTaskList,
@@ -102,7 +104,7 @@ const TaskListSection = ({
 
         <button
           type="button"
-          className="text-brand-primary hover:text-interaction-hover focus-visible:ring-brand-primary rounded-sm text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="text-brand-primary hover:text-interaction-hover focus-visible:ring-brand-primary rounded-sm text-sm font-semibold transition-colors outline-none focus-visible:ring-2"
           onClick={onCreateTaskList}
         >
           할일 추가하기 +
@@ -111,7 +113,7 @@ const TaskListSection = ({
 
       <div className="flex flex-col gap-5">
         {sections.map((section) => (
-          <TaskStatusSectionRow key={section.status} teamId={teamId} section={section} />
+          <TaskStatusSectionRow key={section.status} groupId={groupId} section={section} />
         ))}
       </div>
     </section>

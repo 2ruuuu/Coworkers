@@ -1,8 +1,8 @@
-import type { TaskList } from '@/apis/group/type';
 import type { Task } from '@/apis/task/type';
+import type { TaskList } from '@/apis/taskList/type';
+import { getTaskDate, isTaskDone } from '@/utils/task';
 
 import type { TaskListItem, TaskStatus } from '../type';
-import { getTaskDate, isTaskDone } from './taskStatus';
 
 type TaskItemsByStatus = Record<TaskStatus, TaskListItem[]>;
 

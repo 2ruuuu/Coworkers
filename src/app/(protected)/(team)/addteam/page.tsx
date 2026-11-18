@@ -1,13 +1,12 @@
-import AddTeamForm from './_components/AddTeamForm';
+import TeamCard from '../_components/TeamCard';
+import TeamForm from '../_components/TeamForm';
 
-const AddTeam = () => {
+const AddTeamPage = () => {
   return (
-    <div className="bg-background-primary rounded-[20px]">
-      <div className="px-[21px] py-[60px] md:px-[45px]">
-        <AddTeamForm />
-      </div>
-    </div>
+    <TeamCard>
+      <TeamForm mode="create" />
+    </TeamCard>
   );
 };
 
-export default AddTeam;
+export default AddTeamPage;
