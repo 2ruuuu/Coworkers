@@ -1,17 +1,15 @@
-import type { StaticImageData } from 'next/image';
-
 export type TeamCardSize = 'sm' | 'md' | 'lg';
 export type TeamVariant = 'admin' | 'user';
 
 export interface TeamMember {
   id: number | string;
   name: string;
-  imageUrl?: string | StaticImageData;
+  imageUrl?: string | null;
 }
 
 export interface TeamProps {
   name: string;
-  imageUrl?: string | StaticImageData;
+  imageUrl?: string | null;
   members?: TeamMember[];
   memberCount?: number;
   completedTaskCount?: number;
@@ -19,10 +17,7 @@ export interface TeamProps {
   progressValue?: number;
   variant?: TeamVariant;
   size?: TeamCardSize;
-  progressLabel?: string;
-  totalTaskLabel?: string;
-  completedTaskLabel?: string;
-  settingsLabel?: string;
   className?: string;
+  /** 넘기면 카드 안에 설정 버튼을 보여준다. */
   onSettingsClick?: () => void;
 }

@@ -14,8 +14,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+// 외부 네트워크 없이 보이도록 data URL을 사용한다.
 const SAMPLE_IMAGE =
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=240&h=240&fit=crop';
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="%235189fa"/></svg>';
 
 export const Default: Story = {
   args: {

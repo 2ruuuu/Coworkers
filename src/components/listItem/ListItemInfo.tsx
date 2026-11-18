@@ -1,15 +1,10 @@
-'use client';
-
-import { useRef, useState } from 'react';
-
 import CommentIcon from '@/assets/icons/comment.svg?react';
 import KebabIcon from '@/assets/icons/kebab.svg?react';
-import { OPTIONS } from '@/constants/listItem';
-import { useOutsideClick } from '@/hooks/useOutsideClick';
+import Dropdown from '@/components/dropdown/Dropdown';
+import TaskCheckbox from '@/components/taskCheckbox/TaskCheckbox';
+import { EDIT_DELETE_OPTIONS, type EditDeleteValue } from '@/constants/listItem';
 
-import Dropdown from '../dropdown/Dropdown';
-import TaskCheckbox from '../taskCheckbox/TaskCheckbox';
-import { ListItemInfoProps } from './type';
+import type { ListItemInfoProps } from './type';
 
 const ListItemInfo = ({
   name,
@@ -19,53 +14,33 @@ const ListItemInfo = ({
   onEdit,
   onDelete,
 }: ListItemInfoProps) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-  const handleToggleDropdown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setIsDropdownOpen((prev) => !prev);
-  };
-
-  useOutsideClick(dropdownRef, () => {
-    setIsDropdownOpen(false);
-  });
-
-  const handleSelect = (value: string) => {
-    if (value === 'EDIT') {
-      onEdit();
-    }
-    if (value === 'DELETE') {
-      onDelete();
-    }
-    setIsDropdownOpen(false);
+  const handleSelect = (value: EditDeleteValue) => {
+    if (value === 'EDIT') onEdit();
+    else onDelete();
   };
 
   return (
-    <div className="relative flex items-center justify-between">
-      <div className="flex gap-3.5" onClick={(e) => e.stopPropagation()}>
+    <div className="pointer-events-none relative z-10 flex items-center justify-between">
+      <div className="pointer-events-auto flex gap-3.5">
         <TaskCheckbox task={name} checked={isDone} size="lg" onChange={onToggle} />
         {commentCount > 0 && (
           <div className="flex items-center gap-1">
-            <CommentIcon width={16} height={16} />
-            <span>{commentCount}</span>
+            <CommentIcon width={16} height={16} aria-hidden="true" />
+            <span>
+              <span className="sr-only">댓글 </span>
+              {commentCount}
+            </span>
           </div>
         )}
       </div>
-      <button
-        onClick={handleToggleDropdown}
-        type="button"
-        aria-label={`${name} 메뉴 열기`}
-        aria-expanded={isDropdownOpen}
-        className="text-icon-primary hover:bg-background-secondary hover:text-brand-primary focus-visible:ring-brand-primary flex size-7 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-95"
-      >
-        <KebabIcon width={16} height={16} />
-      </button>
-      {isDropdownOpen && (
-        <div className="absolute right-25" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
-          <Dropdown options={OPTIONS} onSelect={handleSelect} />
-        </div>
-      )}
+      <Dropdown
+        options={EDIT_DELETE_OPTIONS}
+        onSelect={handleSelect}
+        trigger={<KebabIcon width={16} height={16} aria-hidden="true" />}
+        triggerLabel={`${name} 메뉴 열기`}
+        triggerClassName="text-icon-primary hover:bg-background-secondary hover:text-brand-primary size-7 transition-colors active:scale-95"
+        className="pointer-events-auto"
+      />
     </div>
   );
 };

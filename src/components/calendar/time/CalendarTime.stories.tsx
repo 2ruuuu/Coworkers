@@ -1,32 +1,22 @@
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 
-import { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { type Meta, type StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import CalendarTime from './CalendarTime';
+
+// 모든 Story가 공유하는 상태 래퍼 (render 함수 안에서 훅을 직접 쓰지 않음)
+const StatefulCalendarTime = (args: ComponentProps<typeof CalendarTime>) => {
+  const [selectedTime, setSelectedTime] = useState(args.selectedTime);
+
+  return <CalendarTime {...args} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />;
+};
 
 const meta = {
   component: CalendarTime,
   title: 'Components/CalendarTime',
   tags: ['autodocs'],
-
-  // meta 레벨 render: 모든 Story가 이 wrapper를 공유
-  render: (args) => {
-    const { hour, minute } = args.selectedTime;
-    const [selectedHour, setSelectedHour] = useState(hour ?? 0);
-    const [selectedMinute, setSelectedMinute] = useState(minute ?? 0);
-
-    return (
-      <CalendarTime
-        {...args}
-        selectedTime={{ hour: selectedHour, minute: selectedMinute }}
-        setSelectedTime={(time) => {
-          setSelectedHour(time.hour);
-          setSelectedMinute(time.minute);
-        }}
-      />
-    );
-  },
+  render: (args) => <StatefulCalendarTime {...args} />,
 } satisfies Meta<typeof CalendarTime>;
 
 export default meta;

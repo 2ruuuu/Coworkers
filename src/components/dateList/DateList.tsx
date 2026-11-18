@@ -1,7 +1,7 @@
 import { getWeekDatesAround } from '@/utils/date';
 
 import DateItem from '../dateItem/DateItem';
-import { DateListProps } from './type';
+import { type DateListProps } from './type';
 
 const DateList = ({ selectedDate, onChange }: DateListProps) => {
   const days = getWeekDatesAround(selectedDate);

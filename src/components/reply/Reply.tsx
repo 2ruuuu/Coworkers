@@ -1,4 +1,3 @@
-import KebabIcon from '@/assets/icons/kebab.svg?react';
 import { cn } from '@/utils/cn';
 
 import type { ReplyProps, ReplySize } from './type';
@@ -18,14 +17,9 @@ const authorWeightClass: Record<ReplySize, string> = {
   lg: 'font-semibold',
 };
 
-const Reply = ({ size = 'sm', author, avatar, children, date, onMenuClick }: ReplyProps) => {
+const Reply = ({ size = 'sm', author, avatar, children, date, menu }: ReplyProps) => {
   return (
-    <div
-      className={cn(
-        'relative flex items-start gap-3 px-5 py-6',
-        onMenuClick && 'pr-11',
-      )}
-    >
+    <div className={cn('relative flex items-start gap-3 px-5 py-6', menu && 'pr-11')}>
       <div className="shrink-0">{avatar}</div>
 
       <div className="-mt-0.5 min-w-0 flex-1">
@@ -37,19 +31,10 @@ const Reply = ({ size = 'sm', author, avatar, children, date, onMenuClick }: Rep
           {children}
         </div>
 
-        <p className={cn('mt-2 text-slate-400', dateSizeClass[size])}>{date}</p>
+        <p className={cn('text-text-disabled mt-2', dateSizeClass[size])}>{date}</p>
       </div>
 
-      {onMenuClick && (
-        <button
-          type="button"
-          aria-label="메뉴"
-          onClick={onMenuClick}
-          className="absolute top-6 right-5"
-        >
-          <KebabIcon className="size-4" aria-hidden />
-        </button>
-      )}
+      {menu && <div className="absolute top-6 right-5">{menu}</div>}
     </div>
   );
 };

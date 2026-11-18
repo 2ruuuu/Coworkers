@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const SCROLL_AMOUNT = 300;
 const DRAG_THRESHOLD = 10;
@@ -11,6 +11,10 @@ interface ScrollState {
   isDragging: boolean;
 }
 
+/**
+ * 가로 스크롤 영역의 좌/우 버튼 상태와 마우스 드래그 스크롤을 관리한다.
+ * (핸들러 메모이제이션은 React Compiler가 처리한다)
+ */
 export default function useHorizontalScroll<T extends HTMLElement>() {
   const scrollRef = useRef<T | null>(null);
   const startXRef = useRef(0);
@@ -24,7 +28,7 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
     isDragging: false,
   });
 
-  const updateScrollState = useCallback(() => {
+  const updateScrollState = () => {
     const scrollElement = scrollRef.current;
 
     if (!scrollElement) {
@@ -38,27 +42,24 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
       canScrollLeft: scrollElement.scrollLeft > 0,
       canScrollRight: scrollElement.scrollLeft < maxScrollLeft - 1,
     }));
-  }, []);
+  };
 
-  const scrollByDirection = useCallback(
-    (direction: 'left' | 'right') => {
-      const scrollElement = scrollRef.current;
+  const scrollByDirection = (direction: 'left' | 'right') => {
+    const scrollElement = scrollRef.current;
 
-      if (!scrollElement) {
-        return;
-      }
+    if (!scrollElement) {
+      return;
+    }
 
-      scrollElement.scrollBy({
-        left: direction === 'left' ? -SCROLL_AMOUNT : SCROLL_AMOUNT,
-        behavior: 'smooth',
-      });
+    scrollElement.scrollBy({
+      left: direction === 'left' ? -SCROLL_AMOUNT : SCROLL_AMOUNT,
+      behavior: 'smooth',
+    });
 
-      window.setTimeout(updateScrollState, 250);
-    },
-    [updateScrollState],
-  );
+    window.setTimeout(updateScrollState, 250);
+  };
 
-  const handlePointerDown = useCallback((event: React.PointerEvent<T>) => {
+  const handlePointerDown = (event: React.PointerEvent<T>) => {
     const scrollElement = scrollRef.current;
 
     if (
@@ -74,9 +75,9 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
     startScrollLeftRef.current = scrollElement.scrollLeft;
     hasDraggedRef.current = false;
     isDraggingRef.current = true;
-  }, []);
+  };
 
-  const handlePointerMove = useCallback((event: React.PointerEvent<T>) => {
+  const handlePointerMove = (event: React.PointerEvent<T>) => {
     const scrollElement = scrollRef.current;
 
     if (!scrollElement || !isDraggingRef.current) {
@@ -97,30 +98,28 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
 
     event.preventDefault();
     scrollElement.scrollLeft = startScrollLeftRef.current - movedDistance;
-  }, []);
+  };
 
-  const handlePointerUp = useCallback(
-    (event: React.PointerEvent<T>) => {
-      const scrollElement = scrollRef.current;
+  const handlePointerUp = (event: React.PointerEvent<T>) => {
+    const scrollElement = scrollRef.current;
 
-      if (scrollElement?.hasPointerCapture(event.pointerId)) {
-        scrollElement.releasePointerCapture(event.pointerId);
-      }
+    if (scrollElement?.hasPointerCapture(event.pointerId)) {
+      scrollElement.releasePointerCapture(event.pointerId);
+    }
 
-      isDraggingRef.current = false;
-      setScrollState((prev) => ({ ...prev, isDragging: false }));
-      updateScrollState();
+    isDraggingRef.current = false;
+    setScrollState((prev) => ({ ...prev, isDragging: false }));
+    updateScrollState();
 
-      if (hasDraggedRef.current) {
-        window.setTimeout(() => {
-          hasDraggedRef.current = false;
-        }, 0);
-      }
-    },
-    [updateScrollState],
-  );
+    if (hasDraggedRef.current) {
+      window.setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 0);
+    }
+  };
 
-  const handleClickCapture = useCallback((event: React.MouseEvent<T>) => {
+  // 드래그로 스크롤한 직후의 클릭은 카드 링크로 이동하지 않도록 막는다.
+  const handleClickCapture = (event: React.MouseEvent<T>) => {
     if (!hasDraggedRef.current) {
       return;
     }
@@ -128,7 +127,7 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
     event.preventDefault();
     event.stopPropagation();
     hasDraggedRef.current = false;
-  }, []);
+  };
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -137,16 +136,26 @@ export default function useHorizontalScroll<T extends HTMLElement>() {
       return;
     }
 
-    updateScrollState();
+    const handleChange = () => {
+      const maxScrollLeft = scrollElement.scrollWidth - scrollElement.clientWidth;
 
-    scrollElement.addEventListener('scroll', updateScrollState, { passive: true });
-    window.addEventListener('resize', updateScrollState);
+      setScrollState((prev) => ({
+        ...prev,
+        canScrollLeft: scrollElement.scrollLeft > 0,
+        canScrollRight: scrollElement.scrollLeft < maxScrollLeft - 1,
+      }));
+    };
+
+    handleChange();
+
+    scrollElement.addEventListener('scroll', handleChange, { passive: true });
+    window.addEventListener('resize', handleChange);
 
     return () => {
-      scrollElement.removeEventListener('scroll', updateScrollState);
-      window.removeEventListener('resize', updateScrollState);
+      scrollElement.removeEventListener('scroll', handleChange);
+      window.removeEventListener('resize', handleChange);
     };
-  }, [updateScrollState]);
+  }, []);
 
   return {
     scrollRef,

@@ -63,7 +63,7 @@ export const PasswordReset: Story = {
 export const Danger: Story = {
   args: {
     title: '회원 탈퇴를 진행하시겠어요?',
-    description: '그룹장으로 있는 그룹은  자동으로 삭제되고, 모든 그룹에서 나가집니다.',
+    description: '그룹장으로 있는 그룹은 자동으로 삭제되고, 모든 그룹에서 나가집니다.',
     variant: 'danger',
     primaryAction: {
       label: '회원 탈퇴',

@@ -39,7 +39,7 @@ export const Password: Story = {
   },
 };
 
-export const Error: Story = {
+export const WithError: Story = {
   args: {
     ...Default.args,
     isError: true,

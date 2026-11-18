@@ -1,3 +1,5 @@
+'use client';
+
 import CheckboxEmptyIcon from '@/assets/icons/checkbox_empty.svg?react';
 import CheckboxFilledIcon from '@/assets/icons/checkbox_fill.svg?react';
 
@@ -44,14 +46,17 @@ export default function TaskCheckbox({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="sr-only"
+        className="peer sr-only"
       />
 
-      {checked ? (
-        <CheckboxFilledIcon width={iconSize[size]} height={iconSize[size]} />
-      ) : (
-        <CheckboxEmptyIcon width={iconSize[size]} height={iconSize[size]} />
-      )}
+      {/* 실제 체크박스는 숨겨져 있으므로 키보드 포커스를 아이콘 테두리로 보여준다. */}
+      <span className="peer-focus-visible:ring-brand-primary inline-flex rounded-sm peer-focus-visible:ring-2 peer-focus-visible:ring-offset-1">
+        {checked ? (
+          <CheckboxFilledIcon width={iconSize[size]} height={iconSize[size]} aria-hidden="true" />
+        ) : (
+          <CheckboxEmptyIcon width={iconSize[size]} height={iconSize[size]} aria-hidden="true" />
+        )}
+      </span>
 
       <span className={`${taskClassName} ${taskSizeStyle[size]}`}>{task}</span>
     </label>

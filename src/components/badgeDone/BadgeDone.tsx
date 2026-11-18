@@ -5,7 +5,7 @@ import ProgressNothing from '@/assets/icons/progress_nothing.svg?react';
 import ProgressOnDoing from '@/assets/icons/progress_ondoing.svg?react';
 import { cn } from '@/utils/cn';
 
-import { BadgeDoneProps, BadgeStatus } from './type';
+import { type BadgeDoneProps, type BadgeStatus } from './type';
 
 const ICON_MAP = {
   done: ProgressDone,

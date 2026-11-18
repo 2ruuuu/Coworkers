@@ -1,18 +1,17 @@
-import sampleImage from '@/assets/images/sampleImage.svg';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { fn } from 'storybook/test';
 
 import Team from './Team';
 
 const MEMBERS = [
-  { id: 1, name: '최일우', imageUrl: sampleImage },
-  { id: 2, name: '김도욱', imageUrl: sampleImage },
-  { id: 3, name: '이수진', imageUrl: sampleImage },
+  { id: 1, name: '최일우', imageUrl: null },
+  { id: 2, name: '김도욱', imageUrl: null },
+  { id: 3, name: '이수진', imageUrl: null },
 ];
 
 const ADMIN_ARGS = {
   name: '최종 프로젝트 4팀',
-  imageUrl: sampleImage,
+  imageUrl: null,
   members: MEMBERS,
   memberCount: 4,
   completedTaskCount: 5,
