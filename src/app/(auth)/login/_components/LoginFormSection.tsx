@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 
@@ -21,8 +20,6 @@ interface LoginFormSectionProps {
 
 const LoginFormSection = ({ postLoginRedirectPath }: LoginFormSectionProps) => {
   const router = useRouter();
-  const queryClient = useQueryClient();
-
   const { mutateAsync, isPending } = useLoginMutation();
 
   const loginForm = useForm<LoginFormValues>({
@@ -38,7 +35,6 @@ const LoginFormSection = ({ postLoginRedirectPath }: LoginFormSectionProps) => {
 
     try {
       const result = await mutateAsync({ ...data, redirectPath: postLoginRedirectPath });
-      queryClient.clear();
       toast.success('로그인에 성공했어요.');
       router.push(result.redirectPath);
     } catch (error) {
@@ -71,14 +67,13 @@ const LoginFormSection = ({ postLoginRedirectPath }: LoginFormSectionProps) => {
 
       <ResetPasswordEmailSection defaultEmail={loginForm.getValues('email') ?? ''} />
 
-      <Button type="submit" disabled={isPending || !loginForm.formState.isValid}>
-        {isPending ? (
-          <span className="flex items-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          </span>
-        ) : (
-          '로그인'
-        )}
+      <Button
+        type="submit"
+        isLoading={isPending}
+        loadingLabel="로그인 중..."
+        disabled={!loginForm.formState.isValid}
+      >
+        로그인
       </Button>
     </form>
   );

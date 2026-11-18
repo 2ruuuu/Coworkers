@@ -13,15 +13,13 @@ import { useResetPasswordMutation } from '@/queries/auth/queries';
 import { type PasswordChangeFormValues, passwordChangeSchema } from '@/schemas/auth.schema';
 
 interface ResetPasswordFormSectionProps {
-  token?: string;
+  token: string;
 }
 
 const ResetPasswordFormSection = ({ token }: ResetPasswordFormSectionProps) => {
   const router = useRouter();
 
   const { mutateAsync, isPending } = useResetPasswordMutation();
-
-  const hasToken = Boolean(token);
 
   const resetPasswordForm = useForm<PasswordChangeFormValues>({
     resolver: zodResolver(passwordChangeSchema),
@@ -31,24 +29,13 @@ const ResetPasswordFormSection = ({ token }: ResetPasswordFormSectionProps) => {
 
   const errors = resetPasswordForm.formState.errors;
 
-  if (!hasToken) {
-    return (
-      <div className="flex flex-col gap-4 py-8 text-center">
-        <p className="text-status-danger">유효하지 않은 비밀번호 재설정 링크입니다.</p>
-        <Button type="button" onClick={() => router.push('/login')}>
-          로그인으로 돌아가기
-        </Button>
-      </div>
-    );
-  }
-
   const onSubmit = async (data: PasswordChangeFormValues) => {
     if (isPending) return;
 
     try {
       await mutateAsync({
         ...data,
-        token: token as string,
+        token,
       });
       toast.success('비밀번호가 재설정되었어요. 다시 로그인해주세요.');
       router.push('/login');
@@ -84,15 +71,11 @@ const ResetPasswordFormSection = ({ token }: ResetPasswordFormSectionProps) => {
       <Button
         type="submit"
         className="my-4"
-        disabled={isPending || !resetPasswordForm.formState.isValid}
+        isLoading={isPending}
+        loadingLabel="재설정 중..."
+        disabled={!resetPasswordForm.formState.isValid}
       >
-        {isPending ? (
-          <span className="flex items-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          </span>
-        ) : (
-          '비밀번호 재설정'
-        )}
+        비밀번호 재설정
       </Button>
     </form>
   );
