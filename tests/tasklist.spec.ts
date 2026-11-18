@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { OPTIONS } from '@/constants/listItem';
+import { EDIT_DELETE_OPTIONS } from '@/constants/listItem';
 
 test('할 일 목록 CRUD', async ({ page }) => {
   const testTaskListName = `e2e-${Date.now()}`;
@@ -17,9 +17,9 @@ test('할 일 목록 CRUD', async ({ page }) => {
 
   // Update
   await page.getByLabel(`${testTaskListName} 메뉴 열기`).click();
-  await expect(page.getByRole('menuitem', { name: OPTIONS[0].label })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label })).toBeVisible();
 
-  await page.getByRole('menuitem', { name: OPTIONS[0].label }).click();
+  await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label }).click();
   await expect(page.locator('input[type="text"]')).toHaveValue(testTaskListName);
 
   await page.locator('input[type="text"]').fill(updatedTaskListName);
@@ -28,10 +28,10 @@ test('할 일 목록 CRUD', async ({ page }) => {
 
   // Delete
   await page.getByLabel(`${updatedTaskListName} 메뉴 열기`).click();
-  await expect(page.getByRole('menuitem', { name: OPTIONS[1].label })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[1].label })).toBeVisible();
 
-  await page.getByRole('menuitem', { name: OPTIONS[1].label }).click();
-  await expect(page.getByRole('button', { name: OPTIONS[1].label })).toBeVisible();
+  await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[1].label }).click();
+  await expect(page.getByRole('button', { name: EDIT_DELETE_OPTIONS[1].label })).toBeVisible();
 
   await page.getByRole('button', { name: '삭제하기' }).click();
   await expect(page.getByLabel(`${updatedTaskListName} 할 일 목록으로 이동`)).toHaveCount(0);

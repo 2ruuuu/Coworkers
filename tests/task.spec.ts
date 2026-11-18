@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { OPTIONS } from '@/constants/listItem';
+import { EDIT_DELETE_OPTIONS } from '@/constants/listItem';
 
 test.describe('할 일 페이지', () => {
   test('할 일 CRUD', async ({ page }) => {
@@ -26,9 +26,9 @@ test.describe('할 일 페이지', () => {
     await expect(page.getByLabel(`${testTaskName} 메뉴 열기`)).toBeVisible();
 
     await page.getByLabel(`${testTaskName} 메뉴 열기`).click();
-    await expect(page.getByRole('menuitem', { name: OPTIONS[0].label })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label })).toBeVisible();
 
-    await page.getByRole('menuitem', { name: OPTIONS[0].label }).click();
+    await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label }).click();
     await expect(page.getByLabel('할 일 제목')).toHaveValue(testTaskName);
 
     await page.getByLabel('할 일 제목').fill(testTaskName + ' 수정됨');
@@ -45,13 +45,13 @@ test.describe('할 일 페이지', () => {
 
     // Delete
     await page.getByLabel(`${updatedTaskName} 메뉴 열기`).click();
-    await expect(page.getByRole('menuitem', { name: OPTIONS[1].label })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[1].label })).toBeVisible();
 
-    await page.getByRole('menuitem', { name: OPTIONS[1].label }).click();
-    await expect(page.getByRole('button', { name: OPTIONS[1].label })).toBeVisible();
+    await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[1].label }).click();
+    await expect(page.getByRole('button', { name: EDIT_DELETE_OPTIONS[1].label })).toBeVisible();
 
     await page.getByRole('button', { name: '삭제하기' }).click();
-    await expect(page.getByLabel(`${updatedTaskName} 할 일 목록으로 이동`)).toHaveCount(0);
+    await expect(page.getByLabel(`${updatedTaskName} 할 일 상세 보기`)).toHaveCount(0);
   });
 
   test('할 일 상세 창 테스트', async ({ page }) => {
@@ -89,14 +89,14 @@ test.describe('할 일 페이지', () => {
     await expect(page.getByLabel('댓글 등록')).toBeVisible();
     await page.getByLabel('댓글 등록').click();
     await expect(page.getByText(comment)).toBeVisible();
-    await expect(page.getByLabel('메뉴', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('댓글 메뉴')).toBeVisible();
 
     // 댓글 수정
     const updatedComment = `${comment}-수정됨`;
-    await page.getByLabel('메뉴', { exact: true }).click();
+    await page.getByLabel('댓글 메뉴').click();
 
-    await expect(page.getByRole('menuitem', { name: OPTIONS[0].label })).toBeVisible();
-    await page.getByRole('menuitem', { name: OPTIONS[0].label }).click();
+    await expect(page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label })).toBeVisible();
+    await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[0].label }).click();
     await page.getByLabel('댓글 수정').fill(updatedComment);
     await page.getByRole('button', { name: '수정하기' }).click();
 
@@ -104,9 +104,9 @@ test.describe('할 일 페이지', () => {
     await expect(page.getByText(comment, { exact: true })).toHaveCount(0);
 
     // 댓글 삭제
-    await page.getByLabel('메뉴', { exact: true }).click();
+    await page.getByLabel('댓글 메뉴').click();
 
-    await page.getByRole('menuitem', { name: OPTIONS[1].label }).click();
+    await page.getByRole('menuitem', { name: EDIT_DELETE_OPTIONS[1].label }).click();
     await expect(page.getByText(updatedComment)).toHaveCount(0);
   });
 });
