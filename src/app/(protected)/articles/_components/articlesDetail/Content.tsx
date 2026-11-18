@@ -1,7 +1,11 @@
 import Image from 'next/image';
 
-import type { ArticleContentProps } from '@/app/(protected)/articles/_components/articlesDetail/Detail.type';
 import { isAllowedImageUrl } from '@/utils/isAllowedImageUrl';
+
+interface ArticleContentProps {
+  content: string;
+  image?: string | null;
+}
 
 const ArticleContent = ({ content, image }: ArticleContentProps) => {
   return (
@@ -11,7 +15,7 @@ const ArticleContent = ({ content, image }: ArticleContentProps) => {
         <div className="mt-4 flex justify-start">
           <Image
             src={image}
-            alt="article image"
+            alt="게시글 첨부 이미지"
             className="h-auto max-h-[400px] w-auto object-contain"
             width={500}
             height={500}
