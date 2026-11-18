@@ -90,6 +90,16 @@ test('로그인 사용자가 게시글 작성, 좋아요, 댓글 등록을 할 �
     await expect(page.getByText(comment)).toBeVisible();
   });
 
+  // 자유게시판은 실제 서비스와 같은 게시판이므로 테스트로 쓴 글은 지운다.
+  await test.step('작성한 게시글을 삭제한다', async () => {
+    await page.getByRole('button', { name: '게시글 메뉴' }).click();
+    await page.getByRole('menuitem', { name: '삭제하기' }).click();
+    await page.getByRole('button', { name: '삭제', exact: true }).click();
+
+    await page.waitForURL(/\/articles$/);
+    await expect(page.getByText(title)).toHaveCount(0);
+  });
+
   await test.step('프로필 메뉴에서 로그아웃을 선택한다', async () => {
     await page.getByRole('button', { name: '프로필 메뉴' }).click();
     await page.getByRole('menuitem', { name: '로그아웃' }).click();
