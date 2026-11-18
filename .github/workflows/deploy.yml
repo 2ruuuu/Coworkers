@@ -77,18 +77,25 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          # 호스트 키를 known_hosts에 등록하고 엄격하게 검증한다. (중간자 공격 방지)
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            "${EC2_USER}@${EC2_HOST}" bash -s <<EOF
+          # 토큰은 명령줄/스크립트 본문에 남지 않도록 표준입력 첫 줄로만 전달한다.
+          # (heredoc은 따옴표로 막아 로컬에서 변수가 펼쳐지지 않게 한다)
+          {
+            printf '%s\n' "$GHCR_TOKEN"
+            cat <<'EOF'
           set -e
           cd /home/ubuntu/frontend
           git fetch origin main
           git reset --hard origin/main
-          printf '%s' "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${GHCR_USER}" --password-stdin
-          export FRONTEND_IMAGE="${FRONTEND_IMAGE}"
-          sudo docker pull "${FRONTEND_IMAGE}"
+          printf '%s' "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          unset GHCR_TOKEN
+          sudo docker pull "$FRONTEND_IMAGE"
           sudo -E docker compose up -d --pull never
           sudo docker image prune -f
           sudo docker compose ps
           EOF
+          } | ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${EC2_USER}@${EC2_HOST}" \
+            "read -r GHCR_TOKEN && export GHCR_TOKEN GHCR_USER='${GHCR_USER}' FRONTEND_IMAGE='${FRONTEND_IMAGE}' && bash -s"
